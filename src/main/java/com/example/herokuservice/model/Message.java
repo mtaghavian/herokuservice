@@ -19,4 +19,10 @@ public class Message extends BaseModel {
 
     @Column
     private String content;
+
+    @Column
+    private String type;
+
+    @Column
+    private String addr;
 }
