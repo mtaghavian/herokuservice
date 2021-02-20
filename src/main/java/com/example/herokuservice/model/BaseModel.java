@@ -23,7 +23,7 @@ public class BaseModel {
     private UUID id;
 
     @Column
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER_INT)
     private Date mdate;
 
     @PrePersist
