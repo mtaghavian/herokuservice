@@ -17,20 +17,23 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import javax.annotation.PostConstruct;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class)
 @EnableScheduling
 public class HerokuserviceApplication implements ApplicationContextAware {
 
-    public static void main(String[] args) {
-        SpringApplication.run(HerokuserviceApplication.class, args);
-    }
-
     public static ObjectMapper jsonMapper;
+    public static ExecutorService sendExecutor;
     private static ApplicationContext context;
 
     @Autowired
     private ConfigDao configDao;
+
+    public static void main(String[] args) {
+        SpringApplication.run(HerokuserviceApplication.class, args);
+    }
 
     public static ApplicationContext getContext() {
         return context;
@@ -49,6 +52,7 @@ public class HerokuserviceApplication implements ApplicationContextAware {
             configDao.save(config);
         }
         jsonMapper = getBean(ObjectMapper.class);
+        sendExecutor = Executors.newCachedThreadPool();
     }
 
     @Override
@@ -67,5 +71,4 @@ public class HerokuserviceApplication implements ApplicationContextAware {
             registry.addInterceptor(serviceInterceptor);
         }
     }
-
 }
