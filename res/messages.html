@@ -1,0 +1,104 @@
+<html>
+<head>
+    <title>Messages</title>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/png" href="favicon.png"/>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <style>
+        @font-face {
+
+        }
+    </style>
+</head>
+<body>
+
+<form style="padding: 20px 20px 20px 20px;">
+    <div class="form-group">
+        <label for="requestMethod">Method</label>
+        <pre><select class="form-control" id="requestMethod">
+            <option>GET</option>
+            <option>POST</option>
+        </select></pre>
+    </div>
+    <div>
+        <label for="requestUrl">Request URL</label>
+        <code>
+            <input type="text" placeholder="" class="form-control dropdown-toggle" id="requestUrl" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" />
+            <div class="dropdown-menu" aria-labelledby="myInputId">
+                <a class="dropdown-item" onclick="setUrl(this)">/api/message/list</a>
+                <a class="dropdown-item" onclick="setUrl(this)">/api/message/create</a>
+                <a class="dropdown-item" onclick="setUrl(this)">/api/message/read/id</a>
+                <a class="dropdown-item" onclick="setUrl(this)">/api/message/update</a>
+                <a class="dropdown-item" onclick="setUrl(this)">/api/message/delete/id</a>
+                <a class="dropdown-item" onclick="setUrl(this)">/api/message/deleteAll</a>
+            </div>
+        </code>
+    </div>
+    <br/>
+    <div class="form-group">
+        <label for="requestBody">Request Body</label>
+        <pre><textarea class="form-control" style="font-size: 100%;" id="requestBody" rows="7"></textarea></pre>
+    </div>
+    <button type="button" class="btn btn-primary" style="width: 100%" id="submitButton">Submit</button>
+    <br/> <br/>
+    <div class="form-group">
+        <label for="responseStatus">Response Status</label>
+        <pre><input type="text" class="form-control" id="responseStatus" placeholder=""></pre>
+    </div>
+    <div class="form-group">
+        <label for="responseBody">Response</label>
+        <pre><textarea class="form-control" style="font-size: 100%;" id="responseBody" rows="7"></textarea></pre>
+    </div>
+
+    <div class="toast" style="position: absolute; top: 20px; right: 20px;">
+        <div class="toast-header">
+            Notification
+        </div>
+        <div class="toast-body">
+            Http response received!
+        </div>
+    </div>
+</form>
+
+<script>
+    $(document).ready(function () {
+        $.ajaxSetup({
+            contentType: "application/json; charset=utf-8"
+        });
+
+        $("#submitButton").click(function () {
+            $.ajax({
+                url: $("#requestUrl").val(),
+                type: $("#requestMethod").val(),
+                error: function (data, status) {
+                    $("#responseStatus").val("" + status);
+                    $("#responseBody").val("" + JSON.stringify(data, null, 2));
+                    $(".toast").toast("show");
+                },
+                success: function (data, status) {
+                    $("#responseStatus").val("" + status);
+                    var msg = "" + data;
+                    if (typeof data === 'object' && data !== null) {
+                        msg = "" + JSON.stringify(data, null, 2);
+                    }
+                    $("#responseBody").val("" + msg);
+                    $(".toast").toast("show");
+                },
+                data: ($("#requestMethod").val() === 'GET' ? '' : $("#requestBody").val())
+            });
+        });
+    });
+
+    function setUrl(link) {
+        $("#requestUrl").val("" + link.innerHTML);
+    }
+</script>
+</body>
+</html>

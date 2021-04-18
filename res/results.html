@@ -1,0 +1,167 @@
+<html>
+<head>
+    <title>Network Service Placer</title>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/css/uikit.min.css" />
+
+    <!-- UIkit JS -->
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit-icons.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="HeaderHeight" style="width: 100%; background-color: #ffdfdf; position: fixed;top: 0px;z-index: 1;">
+    <div class="CenteredItems" style="display: inline-flex; flex-direction: row-reverse;">
+        <div class="HeaderHeight" style="text-align: center;flex: auto;">
+            <img src="favicon.png" style="width:20px; height: 20px;" alt=""/>
+            &nbsp&nbsp Results
+        </div>
+        <div class="HeaderHeight" id="Return" style="text-align: center;flex: 0 0 50px;">
+            &nbsp <img src="left-arrow.svg" style="width:20px; height: 20px;" alt=""/>
+            &nbsp
+        </div>
+    </div>
+</div>
+<div class="HeaderHeight CenteredItems" style="width: 100%;">
+</div>
+
+<div id="WaitPanel">
+    <div uk-spinner="ratio: 2" class="CenteredItems" style="text-align: center; padding-top: 50px;" id="Spinner"></div>
+    <div id="SpinnerInfo" class="CenteredItems" style="text-align: center; padding-top: 25px;" id="Spinner"></div>
+    <div class="CenteredItems" style="text-align: center; padding-top: 25px;">
+        <button id="StopButton" class="uk-button uk-button-default" >Cancel</button>
+    </div>
+</div>
+
+<div id="DonePanel">
+<table id="table" class="uk-table uk-table-striped CenteredItems">
+    <thead>
+    <tr>
+        <th>Parameter</th>
+        <th>Value</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Bandwidth Demand</td>
+        <td id="bandwidth"></td>
+    </tr>
+    <tr>
+        <td>Topology Type</td>
+        <td id="topology"></td>
+    </tr>
+    <tr>
+        <td>Strategy</td>
+        <td id="strategy"></td>
+    </tr>
+    <tr>
+        <td>Service Size</td>
+        <td id="size"></td>
+    </tr>
+    <tr>
+        <td style="font-weight: bold;">Number of Placements</td>
+        <td style="font-weight: bold;" id="placements"></td>
+    </tr>
+    <tr>
+        <td>Q0, Q1, Q2, Q3, Q4 Times</td>
+        <td id="qs"></td>
+    </tr>
+    <tr>
+        <td>Average Time</td>
+        <td id="avg"></td>
+    </tr>
+    <tr>
+        <td>Remained Bandwidth (%)</td>
+        <td id="rbandwidth"></td>
+    </tr>
+    <tr>
+        <td>Used Bandwidth per Service (%)</td>
+        <td id="ubandwidth"></td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="CenteredItems" style="text-align: center; padding-top: 20px;">
+    <button id="MoreDetails" class="uk-button uk-button-default" >More details</button>
+</div>
+</div>
+
+<script>
+
+    $("#DonePanel").hide();
+
+    $.ajaxSetup({
+        contentType: "application/json; charset=utf-8"
+    });
+
+    function cancel(){
+        $("#StopButton").prop('disabled', true);
+        $.ajax({
+            url: "/api/eval/stop",
+            type: "GET",
+            error: function (data, status) {
+                console.log("Function: error");
+            },
+            success: function (data, status) {
+                window.location.href = '/index.html';
+            }
+        });
+    }
+
+    $("#Return").click(function () {
+        cancel();
+    });
+
+    $("#MoreDetails").click(function () {
+        window.location.href = '/details.html';
+    });
+
+    $("#StopButton").click(function () {
+        cancel();
+    });
+
+    function reload(){
+        $.ajax({
+            url: "/api/eval/status",
+            type: "GET",
+            error: function (data, status) {
+                console.log("Function: error");
+            },
+            success: function (data, status) {
+                var split = data.split("\n");
+                if(split[0] === "NotFinished") {
+                    $("#SpinnerInfo").html(split[1]+" placements found!");
+                } else {
+                    $("#WaitPanel").hide();
+                    $("#DonePanel").show();
+                    var i = 1;
+                    $("#bandwidth").html(split[i++]);
+                    $("#topology").html(split[i++]);
+                    $("#strategy").html(split[i++]);
+                    $("#size").html(split[i++]);
+                    $("#placements").html(split[i++]);
+                    $("#qs").html(""+split[i++]+", "+split[i++]+", "+split[i++]+", "+split[i++]+", "+split[i++]);
+                    $("#avg").html(split[i++]);
+                    $("#rbandwidth").html(split[i++]);
+                    $("#ubandwidth").html(split[i++]);
+                    clearInterval(myInterval);
+                }
+            }
+        });
+    }
+    reload();
+    var myInterval = setInterval(function(){
+        reload();
+    }, 500);
+
+</script>
+</body>
+</html>

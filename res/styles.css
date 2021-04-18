@@ -1,0 +1,86 @@
+
+::-webkit-scrollbar {
+    width: 7px;
+}
+/* Track */
+::-webkit-scrollbar-track {
+    background: rgb(245, 245, 245);
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: rgb(190, 190, 190);
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(170, 170, 170);
+}
+
+.FileUploadResponseFrame {
+    vertical-align: middle;
+    height: 25px;
+    width: 20px;
+    display: none;
+    border: none;
+}
+
+.HeaderHeight{
+    height: 50px;
+    line-height: 50px;
+}
+
+.TwoColumnWidth{
+    width: 47%;
+}
+.TwoColumnPaddingLeft{
+    padding-left: 4%;
+}
+
+.FileEntryName {
+    text-align: left;
+    flex: auto;
+    overflow: hidden;
+    vertical-align: middle;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-left: 5px;
+}
+
+.FileEntrySize {
+    text-align: center;
+    flex: 0 1 auto;
+    color: lightgray;
+    padding-left: 5px;
+}
+
+.FileEntryDelete {
+    flex: 0 0 45px;
+    text-align: center;
+    padding-right: 5px;
+}
+
+/*
+@media (prefers-color-scheme: dark) {
+}
+@font-face {
+    font-family: iransans;
+    src: url(iransans.ttf);
+}
+body {
+    font-family: iransans;
+}
+*/
+CenteredItems {
+}
+@media only screen and (max-width: 500px) {
+    .CenteredItems {
+        width: 90% !important;
+        margin-left: 5% !important;
+    }
+}
+@media only screen and (min-width: 500px) {
+    .CenteredItems {
+        width: 450px !important;
+        margin-left: calc(50% - 225px); !important;
+    }
+}
+

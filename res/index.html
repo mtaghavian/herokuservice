@@ -1,105 +1,229 @@
 <html>
 <head>
-    <title>My Heroku App</title>
+    <title>Network Service Placer</title>
     <meta charset="utf-8">
     <link rel="icon" type="image/png" href="favicon.png"/>
-
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/css/uikit.min.css" />
+
+    <!-- UIkit JS -->
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit-icons.min.js"></script>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-    <style>
-        @font-face {
-
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<form style="padding: 20px 20px 20px 20px;">
-    <div class="form-group">
-        <label for="requestMethod">Method</label>
-        <pre><select class="form-control" id="requestMethod">
-            <option>GET</option>
-            <option>POST</option>
-        </select></pre>
-    </div>
-    <div>
-        <label for="requestUrl">Request URL</label>
-        <code>
-            <input type="text" placeholder="" class="form-control dropdown-toggle" id="requestUrl" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" />
-            <div class="dropdown-menu" aria-labelledby="myInputId">
-                <a class="dropdown-item" onclick="setUrl(this)">/api/config/list</a>
-                <a class="dropdown-item" onclick="setUrl(this)">/api/message/list</a>
-                <a class="dropdown-item" onclick="setUrl(this)">/api/message/create</a>
-                <a class="dropdown-item" onclick="setUrl(this)">/api/message/read/id</a>
-                <a class="dropdown-item" onclick="setUrl(this)">/api/message/update</a>
-                <a class="dropdown-item" onclick="setUrl(this)">/api/message/delete/id</a>
-                <a class="dropdown-item" onclick="setUrl(this)">/api/message/deleteall</a>
-            </div>
-        </code>
-    </div>
-    <br/>
-    <div class="form-group">
-        <label for="requestBody">Request Body</label>
-        <pre><textarea class="form-control" style="font-size: 100%;" id="requestBody" rows="7"></textarea></pre>
-    </div>
-    <button type="button" class="btn btn-primary" style="width: 100%" id="submitButton">Submit</button>
-    <br/> <br/>
-    <div class="form-group">
-        <label for="responseStatus">Response Status</label>
-        <pre><input type="text" class="form-control" id="responseStatus" placeholder=""></pre>
-    </div>
-    <div class="form-group">
-        <label for="responseBody">Response</label>
-        <pre><textarea class="form-control" style="font-size: 100%;" id="responseBody" rows="7"></textarea></pre>
-    </div>
-
-    <div class="toast" style="position: absolute; top: 20px; right: 20px;">
-        <div class="toast-header">
-            Notification
-        </div>
-        <div class="toast-body">
-            Http response received!
+<div class="HeaderHeight" style="width: 100%; background-color: #ffdfdf; position: fixed;top: 0px;z-index: 1;">
+    <div class="CenteredItems">
+        <div class="HeaderHeight" style="text-align: center;">
+            <img src="favicon.png" style="width:20px; height: 20px;" alt=""/>
+            &nbsp&nbsp Network Service Placer
         </div>
     </div>
+</div>
+<div class="HeaderHeight CenteredItems" style="width: 100%;">
+</div>
+<br/>
+<form class="uk-form-stacked">
+    <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Substrate Network</span></h1>
+
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label" for="SNTopology">Topology</label>
+        <div class="uk-form-controls">
+            <select class="uk-select" id="SNTopology" onchange="SNChange()">
+            </select>
+        </div>
+    </div>
+
+    <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Service Graph</span></h1>
+
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="SGTopology">Topology</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="SGSize" style="display: inline-block;">Size</label>
+        <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
+            <select class="uk-select" id="SGTopology">
+                <option>DaisyChain</option>
+                <option>Ring</option>
+                <option>Star</option>
+            </select>
+        </div>
+        <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
+            <select class="uk-select" id="SGSize">
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+            </select>
+        </div>
+    </div>
+    <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Placer</span></h1>
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="PlacerType">Type</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="Routing" style="display: inline-block;">Routing Algorithm</label>
+        <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
+            <select class="uk-select" id="PlacerType">
+                <option>FirstFound</option>
+                <option>BestFound</option>
+            </select>
+        </div>
+        <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
+            <select class="uk-select" id="Routing">
+                <option>HopCount</option>
+            </select>
+        </div>
+    </div>
+    <div class="uk-margin CenteredItems" style="display: block;">
+        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="Timeout">Timout</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="Bandwidth" style="display: inline-block;">Bandwidth Demand</label>
+        <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
+            <select class="uk-select" id="Timeout">
+                <option>1000</option>
+                <option>2000</option>
+                <option>4000</option>
+                <option>8000</option>
+            </select>
+        </div>
+        <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
+            <select class="uk-select" id="Bandwidth">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+            </select>
+        </div>
+    </div>
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label" for="Strategy">Strategy</label>
+        <div class="uk-form-controls">
+            <select class="uk-select" id="Strategy">
+                <option>ADBO</option>
+                <option>ABO</option>
+                <option>DBO</option>
+                <option>EDFF</option>
+                <option>EIFF</option>
+                <option>DFF</option>
+                <option>IFF</option>
+            </select>
+        </div>
+    </div>
+
+    <button type="button" class="uk-button uk-button-primary CenteredItems" id="Place">Place</button>
 </form>
-
+<script src="script.js"></script>
 <script>
-    $(document).ready(function () {
-        $.ajaxSetup({
-            contentType: "application/json; charset=utf-8"
-        });
+    var uploadSNFileMessage = "Upload an arbitrary zoo topology file";
+    function initSNTopologies() {
+        var option = document.createElement('option');
+        $("#SNTopology").append(option);
+        option = document.createElement('option');
+        option.innerHTML = uploadSNFileMessage;
+        $("#SNTopology").append(option);
+    }
+    function SNChange() {
+        var x = document.getElementById("SNTopology").value;
+        if(x === uploadSNFileMessage) {
+            window.location.href = '/files.html';
+        }
+    }
 
-        $("#submitButton").click(function () {
-            $.ajax({
-                url: $("#requestUrl").val(),
-                type: $("#requestMethod").val(),
-                error: function (data, status) {
-                    $("#responseStatus").val("" + status);
-                    $("#responseBody").val("" + JSON.stringify(data, null, 2));
-                    $(".toast").toast("show");
-                },
-                success: function (data, status) {
-                    $("#responseStatus").val("" + status);
-                    var msg = "" + data;
-                    if (typeof data === 'object' && data !== null) {
-                        msg = "" + JSON.stringify(data, null, 2);
-                    }
-                    $("#responseBody").val("" + msg);
-                    $(".toast").toast("show");
-                },
-                data: ($("#requestMethod").val() === 'GET' ? '' : $("#requestBody").val())
-            });
-        });
+    $.ajaxSetup({
+        contentType: "application/json; charset=utf-8"
     });
 
-    function setUrl(link) {
-        $("#requestUrl").val("" + link.innerHTML);
+    function onerror(data) {
+        var text = HTTP_STATUS_CODES[data.status];
+        UIkit.notification({message: text, status: 'warning', pos: 'bottom-center', timeout: 1000})
     }
+
+    var place = function () {
+        $("#Place").prop('disabled', true);
+        $.ajax({
+            url: "/api/eval/start",
+            type: "POST",
+            error: function (data, status) {
+                $("#Place").prop('disabled', false);
+                onerror(data);
+            },
+            success: function (data, status) {
+                console.log("Function: success");
+                window.location.href = '/results.html';
+            },
+            data: JSON.stringify({
+                networkTopology: $("#SNTopology").val(),
+                serviceTopology: $("#SGTopology").val(),
+                serviceSize: $("#SGSize").val(),
+                placerType: $("#PlacerType").val(),
+                routing: $("#Routing").val(),
+                timeout: $("#Timeout").val(),
+                bandwidth: $("#Bandwidth").val(),
+                strategy: $("#Strategy").val()
+            })
+        });
+    };
+    $("#Place").click(place);
+
+    function reload(){
+        $("#SNTopology").empty();
+
+        $.ajax({
+            url: "/api/file/list",
+            type: "GET",
+            error: function (data, status) {
+                onerror(data);
+            },
+            success: function (data, status) {
+                if(data.length === 0){
+                    initSNTopologies();
+                    return;
+                }
+                var option;
+                for (var key in data) {
+                    option = document.createElement('option');
+                    option.innerHTML = data[key].name;
+                    $("#SNTopology").append(option);
+                }
+                option = document.createElement('option');
+                option.innerHTML = uploadSNFileMessage;
+                $("#SNTopology").append(option);
+
+                $.ajax({
+                    url: "/api/eval/getParams",
+                    type: "GET",
+                    error: function (data, status) {
+                        onerror(data);
+                    },
+                    success: function (data, status) {
+                        if(data.hasOwnProperty('networkTopology')) {
+                            $("#SNTopology").val(data.networkTopology);
+                            $("#SGTopology").val(data.serviceTopology);
+                            $("#SGSize").val(data.serviceSize);
+                            $("#PlacerType").val(data.placerType);
+                            $("#Routing").val(data.routing);
+                            $("#Timeout").val(data.timeout);
+                            $("#Bandwidth").val(data.bandwidth);
+                            $("#Strategy").val(data.strategy);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    reload();
+
 </script>
 </body>
 </html>
