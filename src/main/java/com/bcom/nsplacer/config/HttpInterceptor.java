@@ -50,6 +50,7 @@ public class HttpInterceptor implements HandlerInterceptor {
         publicPaths.add("/signIn.html");
         publicPaths.add("/cmd.html");
         publicPaths.add("/api/user/signIn");
+        publicPaths.add("/api/message/*");
     }
 
     public MediaType getMediaType(String fileName) {
@@ -91,7 +92,7 @@ public class HttpInterceptor implements HandlerInterceptor {
                 return false;
             }
         } else {
-            if (!publicPaths.contains(uri)) {
+            if (!isPublicPath(uri)) {
                 response.sendRedirect("/signIn.html");
                 return false;
             }
@@ -120,7 +121,7 @@ public class HttpInterceptor implements HandlerInterceptor {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return false;
         } else {
-            if (publicPaths.contains(uri)) {
+            if (isPublicPath(uri)) {
                 return true;
             }
         }
@@ -130,6 +131,22 @@ public class HttpInterceptor implements HandlerInterceptor {
         }
 
         return true;
+    }
+
+    private boolean isPublicPath(String uri) {
+        for (String p : publicPaths) {
+            if (p.contains("*")) {
+                p = p.substring(0, p.indexOf("*"));
+                if(uri.startsWith(p)){
+                    return true;
+                }
+            } else {
+                if(p.equals(uri)){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
