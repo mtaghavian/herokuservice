@@ -101,6 +101,7 @@
     });
 
     function cancel(){
+        clearInterval(myInterval);
         $("#StopButton").prop('disabled', true);
         $.ajax({
             url: "/api/eval/stop",
