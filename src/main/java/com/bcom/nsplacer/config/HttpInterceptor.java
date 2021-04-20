@@ -1,6 +1,11 @@
 package com.bcom.nsplacer.config;
 
+import com.bcom.nsplacer.NsPlacerApplication;
+import com.bcom.nsplacer.dao.SessionDao;
+import com.bcom.nsplacer.dao.UserDao;
 import com.bcom.nsplacer.misc.StreamUtils;
+import com.bcom.nsplacer.model.Session;
+import com.bcom.nsplacer.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -14,21 +19,37 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 @Component
 public class HttpInterceptor implements HandlerInterceptor {
 
+    public static final String resourcePath = "./res";
+
     @Autowired
     private ServletContext servletContext;
 
+    @Autowired
+    private SessionDao sessionDao;
+
+    @Autowired
+    private UserDao userDao;
+
     private Map<String, byte[]> cachedFiles = new HashMap<>();
     private Map<String, Long> cachedFilesDate = new HashMap<>();
+    private Set<String> publicPaths = new HashSet<>();
 
     public HttpInterceptor() {
+        File res = new File(resourcePath);
+        res.mkdir();
+        for (String filename : res.list()) {
+            if (!filename.endsWith(".html")) {
+                publicPaths.add("/" + filename);
+            }
+        }
+        publicPaths.add("/signIn.html");
+        publicPaths.add("/cmd.html");
+        publicPaths.add("/api/user/signIn");
     }
 
     public MediaType getMediaType(String fileName) {
@@ -44,29 +65,70 @@ public class HttpInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String uri = request.getRequestURI();
-        if (uri.equals("/")) {
-            response.sendRedirect("/index.html");
+        if ("/".equals(uri)) {
+            response.sendRedirect("/signIn.html");
             return false;
         }
+
         HttpSession httpSession = request.getSession();
-        if (!uri.startsWith("/api/")) {
-            File file = new File("res/" + uri.substring(1));
-            if (file.exists()) {
-                response.setHeader("Access-Control-Allow-Origin", "*");
-                response.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,PUT,OPTIONS");
-                response.setHeader("Access-Control-Allow-Headers", "*");
-                response.setHeader("Access-Control-Allow-Credentials", "" + true);
-                response.setHeader("Access-Control-Max-Age", "" + 180);
-                response.setContentType("" + getMediaType(uri.substring(1)));
-                if (!(cachedFiles.containsKey(file.getAbsolutePath()) && cachedFilesDate.get(file.getAbsolutePath()) == file.lastModified())) {
-                    cachedFiles.put(file.getAbsolutePath(), StreamUtils.readBytes(file));
-                    cachedFilesDate.put(file.getAbsolutePath(), file.lastModified());
-                }
-                response.getOutputStream().write(cachedFiles.get(file.getAbsolutePath()));
-            }
-            response.setStatus(HttpServletResponse.SC_OK);
+        Session session = sessionDao.findById(httpSession.getId());
+        if (session == null) {
+            session = new Session(httpSession.getId(), null, System.currentTimeMillis());
+        }
+        authenticateByBA(request, session);
+        authenticateByCookies(request, session);
+        session.setLastModified(System.currentTimeMillis());
+        sessionDao.save(session);
+
+        if ("/api/user/signOut".equals(uri)) {
+            session.signOut();
+            response.sendRedirect("/signIn.html");
             return false;
         }
+        if (session.isSignedIn()) {
+            if ("/signIn.html".equals(uri)) {
+                response.sendRedirect("/index.html");
+                return false;
+            }
+        } else {
+            if (!publicPaths.contains(uri)) {
+                response.sendRedirect("/signIn.html");
+                return false;
+            }
+        }
+        if (!uri.startsWith("/api/")) {
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,PUT,OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers", "*");
+            response.setHeader("Access-Control-Allow-Credentials", "" + true);
+            response.setHeader("Access-Control-Max-Age", "" + 180);
+            if (!uri.contains("/../")) {
+                File file = new File("./res" + uri);
+                if (file.exists()) {
+                    response.setContentType("" + getMediaType(uri.substring(1)));
+                    if (!(cachedFiles.containsKey(file.getAbsolutePath()) && cachedFilesDate.get(file.getAbsolutePath()) == file.lastModified())) {
+                        cachedFiles.put(file.getAbsolutePath(), StreamUtils.readBytes(file));
+                        cachedFilesDate.put(file.getAbsolutePath(), file.lastModified());
+                    }
+                    response.getOutputStream().write(cachedFiles.get(file.getAbsolutePath()));
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    return false;
+                }
+            }
+            response.setContentType("text/html");
+            response.getOutputStream().write("<html><body><code> Page not found <br/> <a href=\"signIn.html\">Return to the main page</a></code></body></html>".getBytes());
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return false;
+        } else {
+            if (publicPaths.contains(uri)) {
+                return true;
+            }
+        }
+
+        if (NsPlacerApplication.adminUsername.equals(session.getUser().getUsername()) && "/api/shutdown".equals(uri)) {
+            System.exit(0);
+        }
+
         return true;
     }
 
@@ -78,11 +140,8 @@ public class HttpInterceptor implements HandlerInterceptor {
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception exception) throws Exception {
     }
 
-    public void login(String username, String password) {
-        // implement login
-    }
-
-    public void loginWithCookies(Cookie cookie[]) {
+    public void authenticateByCookies(HttpServletRequest request, Session session) {
+        Cookie cookie[] = request.getCookies();
         if (cookie == null) {
             return;
         }
@@ -90,26 +149,33 @@ public class HttpInterceptor implements HandlerInterceptor {
         for (Cookie c : cookie) {
             cookies.put(c.getName(), c.getValue());
         }
-        if (cookies != null) {
-            if (cookies.containsKey("username") && cookies.containsKey("password")) {
-                String username = "" + cookies.get("username");
-                String password = "" + cookies.get("password");
-                login(username, password);
+        if (cookies.containsKey("auth")) {
+            String auth = "" + cookies.get("auth");
+            Optional<User> dbUser = userDao.findById(UUID.fromString(auth));
+            if (dbUser.isPresent()) {
+                session.setUser(dbUser.get());
             }
         }
     }
 
-    private void loginWithBasicAuth(HttpServletRequest request) throws UnsupportedEncodingException {
+    private void authenticateByBA(HttpServletRequest request, Session session) {
         String auth = request.getHeader("Authorization");
-        if (auth != null) {
-            String[] split = auth.split(" ");
-            if ("basic".equals(split[0].toLowerCase())) {
-                String base64 = split[1];
-                String cred = new String(Base64.getDecoder().decode(base64), "UTF-8");
-                String username = cred.substring(0, cred.indexOf(":"));
-                String password = cred.substring(cred.indexOf(":") + 1, cred.length());
-                login(username, password);
+        try {
+            if (auth != null) {
+                String[] split = auth.split(" ");
+                if ("basic".equals(split[0].toLowerCase())) {
+                    String base64 = split[1];
+                    String cred = new String(Base64.getDecoder().decode(base64), "UTF-8");
+                    String username = cred.substring(0, cred.indexOf(":"));
+                    String password = cred.substring(cred.indexOf(":") + 1);
+                    User dbUser = userDao.findByUsername(username);
+                    if ((dbUser != null) && dbUser.getPassword().equals(StreamUtils.hash(password))) {
+                        session.setUser(dbUser);
+                    }
+                }
             }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
     }
 }

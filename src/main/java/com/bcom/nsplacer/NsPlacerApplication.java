@@ -2,7 +2,9 @@ package com.bcom.nsplacer;
 
 import com.bcom.nsplacer.config.HttpInterceptor;
 import com.bcom.nsplacer.dao.ConfigDao;
-import com.bcom.nsplacer.model.Config;
+import com.bcom.nsplacer.dao.UserDao;
+import com.bcom.nsplacer.misc.StreamUtils;
+import com.bcom.nsplacer.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +26,16 @@ import javax.annotation.PostConstruct;
 @EnableScheduling
 public class NsPlacerApplication implements ApplicationContextAware {
 
+    public static final String adminUsername = "admin";
+
     public static ObjectMapper jsonMapper;
     private static ApplicationContext context;
 
     @Autowired
     private ConfigDao configDao;
+
+    @Autowired
+    private UserDao userDao;
 
     public static void main(String[] args) {
         SpringApplication.run(NsPlacerApplication.class, args);
@@ -44,11 +51,20 @@ public class NsPlacerApplication implements ApplicationContextAware {
 
     @PostConstruct
     public void starter() {
-        if (configDao.findAll().isEmpty()) {
-            Config config = new Config();
-            config.setName("MLDataGenerationThreadCount");
-            config.setValue("4");
-            configDao.save(config);
+        if (userDao.findAll().isEmpty()) {
+            User user = new User();
+            user.setUsername(adminUsername);
+            user.setPassword(StreamUtils.hash("mnts"));
+            user.setFirstname("Masoud");
+            user.setLastname("Taghavian");
+            userDao.save(user);
+
+            user = new User();
+            user.setUsername("placer");
+            user.setPassword(StreamUtils.hash("bcom"));
+            user.setFirstname("Masoud");
+            user.setLastname("Taghavian");
+            userDao.save(user);
         }
         jsonMapper = getBean(ObjectMapper.class);
     }
@@ -56,6 +72,13 @@ public class NsPlacerApplication implements ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext ac) throws BeansException {
         context = ac;
+    }
+
+    @Bean(name = "multipartResolver")
+    public CommonsMultipartResolver multipartResolver() {
+        CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
+        multipartResolver.setMaxUploadSize(10000000000l);
+        return multipartResolver;
     }
 
     @Configuration
@@ -68,12 +91,5 @@ public class NsPlacerApplication implements ApplicationContextAware {
         public void addInterceptors(InterceptorRegistry registry) {
             registry.addInterceptor(serviceInterceptor);
         }
-    }
-
-    @Bean(name = "multipartResolver")
-    public CommonsMultipartResolver multipartResolver() {
-        CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
-        multipartResolver.setMaxUploadSize(10000000000l);
-        return multipartResolver;
     }
 }

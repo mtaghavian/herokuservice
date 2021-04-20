@@ -19,14 +19,21 @@
 </head>
 <body>
 <div class="HeaderHeight" style="width: 100%; background-color: #ffdfdf; position: fixed;top: 0px;z-index: 1;">
-    <div class="CenteredItems">
-        <div class="HeaderHeight" style="text-align: center;">
+    <div class="CenteredItems" style="display: inline-flex; flex-direction: row-reverse;">
+        <div class="HeaderHeight uk-inline" style="text-align: center;flex: 0 0 50px;">
+            &nbsp <img src="menu.svg" style="width:20px; height: 20px;" alt=""/>
+            &nbsp
+            <div uk-dropdown="mode: click; pos: bottom-right; animation: uk-animation-slide-top-small; duration: 500" style="">
+                <ul class="uk-nav uk-dropdown-nav">
+                    <li><a id="SignOut" class="" href="#">Sign out</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="HeaderHeight" style="text-align: center;flex: auto;">
             <img src="favicon.png" style="width:20px; height: 20px;" alt=""/>
             &nbsp&nbsp Network Service Placer
         </div>
     </div>
-</div>
-<div class="HeaderHeight CenteredItems" style="width: 100%;">
 </div>
 <br/>
 <form class="uk-form-stacked">
@@ -138,6 +145,11 @@
             window.location.href = '/files.html';
         }
     }
+
+    $("#SignOut").click(function () {
+        document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        window.location.href = '/api/user/signOut';
+    });
 
     $.ajaxSetup({
         contentType: "application/json; charset=utf-8"

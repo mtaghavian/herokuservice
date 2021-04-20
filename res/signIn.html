@@ -1,0 +1,108 @@
+<html>
+<head>
+    <title>Network Service Placer</title>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/css/uikit.min.css" />
+
+    <!-- UIkit JS -->
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit-icons.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="HeaderHeight" style="width: 100%; background-color: #ffdfdf; position: fixed;top: 0px;z-index: 1;">
+    <div class="CenteredItems" style="display: inline-flex; flex-direction: row-reverse;">
+        <div class="HeaderHeight" style="text-align: center;flex: auto;">
+            <img src="favicon.png" style="width:20px; height: 20px;" alt=""/>
+            &nbsp&nbsp Network Service Placer
+        </div>
+    </div>
+</div>
+<br/>
+<form class="uk-form-stacked">
+
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label" for="username">Username</label>
+        <div class="uk-form-controls">
+            <input class="uk-input" id="username" type="text" placeholder="">
+        </div>
+    </div>
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label" for="password">Password</label>
+        <div class="uk-form-controls">
+            <input class="uk-input" id="password" type="password" placeholder="">
+        </div>
+    </div>
+
+    <div class="uk-margin uk-grid-small uk-child-width-auto uk-grid CenteredItems">
+        <label style="padding-left: 0px;"><input id="rememberMe" class="uk-checkbox" type="checkbox" checked> Remember me</label>
+    </div>
+
+    <button type="button" class="uk-button uk-button-primary CenteredItems" id="SignIn">Sign in</button>
+
+    <br/><br/><br/>
+    <div class="CenteredItems" style="text-align: center; display: none;">
+        You do not have an account? &nbsp&nbsp <button type="button" class="uk-button uk-button-default" id="SignUp">Sign up</button>
+    </div>
+    <br/>
+</form>
+<script>
+    $(document).ready(function () {
+        function setCookie(cname, cvalue, days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            var expires = "expires=" + date.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
+
+        $.ajaxSetup({
+            contentType: "application/json; charset=utf-8"
+        });
+
+        var signIn = function () {
+            $("#SignIn").prop('disabled', true);
+            $.ajax({
+                url: "/api/user/signIn",
+                type: "POST",
+                error: function (data, status) {
+                    $("#SignIn").prop('disabled', false);
+                    console.log("Function: error");
+                },
+                success: function (data, status) {
+                    $("#SignIn").prop('disabled', false);
+                    var split = data.split("\n");
+                    if ("YES".localeCompare(split[0]) === 0) {
+                        if ($("#rememberMe").is(':checked')) {
+                            setCookie("auth", split[1], 365);
+                        }
+                        window.location.href = split[2];
+                    } else {
+                        UIkit.notification({message: split[1], status: 'warning', pos: 'bottom-center', timeout: 1000})
+                    }
+                },
+                data: JSON.stringify({
+                    username: $("#username").val(),
+                    password: $("#password").val(),
+                    rememberMe: ($("#rememberMe").is(':checked'))
+                })
+            });
+        };
+        $("#SignIn").click(signIn);
+        $("#username").keyup(function(e){if(e.keyCode == 13) {signIn();}});
+        $("#password").keyup(function(e){if(e.keyCode == 13) {signIn();}});
+
+        $("#SignUp").click(function () {
+            window.location.href = '/signUp.html';
+        });
+    });
+</script>
+</body>
+</html>
