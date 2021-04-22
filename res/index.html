@@ -87,13 +87,55 @@
 <script src="script.js"></script>
 <script>
     var uploadSNFileMessage = "Upload an arbitrary zoo topology file";
+
+    function initialFields() {
+        console.log("hey");
+        $("#SGTopology").append(createOption("DaisyChain"));
+        $("#SGTopology").append(createOption("Ring"));
+        $("#SGTopology").append(createOption("Star"));
+
+        $("#SGSize").append(createOption("3"));
+        $("#SGSize").append(createOption("4"));
+        $("#SGSize").append(createOption("5"));
+        $("#SGSize").append(createOption("6"));
+        $("#SGSize").append(createOption("7"));
+        $("#SGSize").append(createOption("8"));
+
+        $("#Timeout").append(createOption("2000"));
+        $("#Timeout").append(createOption("4000"));
+        $("#Timeout").append(createOption("8000"));
+        $("#Timeout").append(createOption("16000"));
+
+        $("#Bandwidth").append(createOption("1"));
+        $("#Bandwidth").append(createOption("2"));
+        $("#Bandwidth").append(createOption("3"));
+        $("#Bandwidth").append(createOption("4"));
+        $("#Bandwidth").append(createOption("5"));
+        $("#Bandwidth").append(createOption("6"));
+        $("#Bandwidth").append(createOption("7"));
+        $("#Bandwidth").append(createOption("8"));
+        $("#Bandwidth").append(createOption("9"));
+        $("#Bandwidth").append(createOption("10"));
+
+        $("#Strategy").append(createOption("ADBO"));
+        $("#Strategy").append(createOption("ABO"));
+        $("#Strategy").append(createOption("DBO"));
+        $("#Strategy").append(createOption("EDFF"));
+        $("#Strategy").append(createOption("EIFF"));
+        $("#Strategy").append(createOption("DFF"));
+        $("#Strategy").append(createOption("IFF"));
+    }
+
     function initSNTopologies() {
         var option = document.createElement('option');
         $("#SNTopology").append(option);
         option = document.createElement('option');
         option.innerHTML = uploadSNFileMessage;
         $("#SNTopology").append(option);
+
+        initialFields();
     }
+
     function SNChange() {
         var x = document.getElementById("SNTopology").value;
         if(x === uploadSNFileMessage) {
@@ -113,6 +155,12 @@
     function onerror(data) {
         var text = HTTP_STATUS_CODES[data.status];
         UIkit.notification({message: text, status: 'warning', pos: 'bottom-center', timeout: 1000})
+    }
+
+    var createOption = function (text){
+        var option = document.createElement('option');
+        option.innerHTML = text;
+        return option;
     }
 
     var place = function () {
@@ -172,46 +220,7 @@
                         onerror(data);
                     },
                     success: function (data, status) {
-                        var createOption = function (text){
-                            var option = document.createElement('option');
-                            option.innerHTML = text;
-                            return option;
-                        }
-
-                        $("#SGTopology").append(createOption("DaisyChain"));
-                        $("#SGTopology").append(createOption("Ring"));
-                        $("#SGTopology").append(createOption("Star"));
-
-                        $("#SGSize").append(createOption("3"));
-                        $("#SGSize").append(createOption("4"));
-                        $("#SGSize").append(createOption("5"));
-                        $("#SGSize").append(createOption("6"));
-                        $("#SGSize").append(createOption("7"));
-                        $("#SGSize").append(createOption("8"));
-
-                        $("#Timeout").append(createOption("2000"));
-                        $("#Timeout").append(createOption("4000"));
-                        $("#Timeout").append(createOption("8000"));
-                        $("#Timeout").append(createOption("16000"));
-
-                        $("#Bandwidth").append(createOption("1"));
-                        $("#Bandwidth").append(createOption("2"));
-                        $("#Bandwidth").append(createOption("3"));
-                        $("#Bandwidth").append(createOption("4"));
-                        $("#Bandwidth").append(createOption("5"));
-                        $("#Bandwidth").append(createOption("6"));
-                        $("#Bandwidth").append(createOption("7"));
-                        $("#Bandwidth").append(createOption("8"));
-                        $("#Bandwidth").append(createOption("9"));
-                        $("#Bandwidth").append(createOption("10"));
-
-                        $("#Strategy").append(createOption("ADBO"));
-                        $("#Strategy").append(createOption("ABO"));
-                        $("#Strategy").append(createOption("DBO"));
-                        $("#Strategy").append(createOption("EDFF"));
-                        $("#Strategy").append(createOption("EIFF"));
-                        $("#Strategy").append(createOption("DFF"));
-                        $("#Strategy").append(createOption("IFF"));
+                        initialFields();
 
                         if(data.hasOwnProperty('networkTopology')) {
                             $("#SNTopology").val(data.networkTopology);
