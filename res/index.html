@@ -54,61 +54,23 @@
         <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="SGSize" style="display: inline-block;">Size</label>
         <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
             <select class="uk-select" id="SGTopology">
-                <option>DaisyChain</option>
-                <option>Ring</option>
-                <option>Star</option>
             </select>
         </div>
         <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
             <select class="uk-select" id="SGSize">
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
-                <option>6</option>
-                <option>7</option>
-                <option>8</option>
             </select>
         </div>
     </div>
     <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Placer</span></h1>
-    <div class="uk-margin CenteredItems">
-        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="PlacerType">Type</label>
-        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="Routing" style="display: inline-block;">Routing Algorithm</label>
-        <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
-            <select class="uk-select" id="PlacerType">
-                <option>FirstFound</option>
-                <option>BestFound</option>
-            </select>
-        </div>
-        <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
-            <select class="uk-select" id="Routing">
-                <option>HopCount</option>
-            </select>
-        </div>
-    </div>
     <div class="uk-margin CenteredItems" style="display: block;">
         <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="Timeout">Timout</label>
         <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="Bandwidth" style="display: inline-block;">Bandwidth Demand</label>
         <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
             <select class="uk-select" id="Timeout">
-                <option>1000</option>
-                <option>2000</option>
-                <option>4000</option>
-                <option>8000</option>
             </select>
         </div>
         <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
             <select class="uk-select" id="Bandwidth">
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4</option>
-                <option>5</option>
-                <option>6</option>
-                <option>7</option>
-                <option>8</option>
-                <option>9</option>
-                <option>10</option>
             </select>
         </div>
     </div>
@@ -116,13 +78,6 @@
         <label class="uk-form-label" for="Strategy">Strategy</label>
         <div class="uk-form-controls">
             <select class="uk-select" id="Strategy">
-                <option>ADBO</option>
-                <option>ABO</option>
-                <option>DBO</option>
-                <option>EDFF</option>
-                <option>EIFF</option>
-                <option>DFF</option>
-                <option>IFF</option>
             </select>
         </div>
     </div>
@@ -177,8 +132,6 @@
                 networkTopology: $("#SNTopology").val(),
                 serviceTopology: $("#SGTopology").val(),
                 serviceSize: $("#SGSize").val(),
-                placerType: $("#PlacerType").val(),
-                routing: $("#Routing").val(),
                 timeout: $("#Timeout").val(),
                 bandwidth: $("#Bandwidth").val(),
                 strategy: $("#Strategy").val()
@@ -202,6 +155,7 @@
                     return;
                 }
                 var option;
+
                 for (var key in data) {
                     option = document.createElement('option');
                     option.innerHTML = data[key].name;
@@ -218,12 +172,51 @@
                         onerror(data);
                     },
                     success: function (data, status) {
+                        var createOption = function (text){
+                            var option = document.createElement('option');
+                            option.innerHTML = text;
+                            return option;
+                        }
+
+                        $("#SGTopology").append(createOption("DaisyChain"));
+                        $("#SGTopology").append(createOption("Ring"));
+                        $("#SGTopology").append(createOption("Star"));
+
+                        $("#SGSize").append(createOption("3"));
+                        $("#SGSize").append(createOption("4"));
+                        $("#SGSize").append(createOption("5"));
+                        $("#SGSize").append(createOption("6"));
+                        $("#SGSize").append(createOption("7"));
+                        $("#SGSize").append(createOption("8"));
+
+                        $("#Timeout").append(createOption("2000"));
+                        $("#Timeout").append(createOption("4000"));
+                        $("#Timeout").append(createOption("8000"));
+                        $("#Timeout").append(createOption("16000"));
+
+                        $("#Bandwidth").append(createOption("1"));
+                        $("#Bandwidth").append(createOption("2"));
+                        $("#Bandwidth").append(createOption("3"));
+                        $("#Bandwidth").append(createOption("4"));
+                        $("#Bandwidth").append(createOption("5"));
+                        $("#Bandwidth").append(createOption("6"));
+                        $("#Bandwidth").append(createOption("7"));
+                        $("#Bandwidth").append(createOption("8"));
+                        $("#Bandwidth").append(createOption("9"));
+                        $("#Bandwidth").append(createOption("10"));
+
+                        $("#Strategy").append(createOption("ADBO"));
+                        $("#Strategy").append(createOption("ABO"));
+                        $("#Strategy").append(createOption("DBO"));
+                        $("#Strategy").append(createOption("EDFF"));
+                        $("#Strategy").append(createOption("EIFF"));
+                        $("#Strategy").append(createOption("DFF"));
+                        $("#Strategy").append(createOption("IFF"));
+
                         if(data.hasOwnProperty('networkTopology')) {
                             $("#SNTopology").val(data.networkTopology);
                             $("#SGTopology").val(data.serviceTopology);
                             $("#SGSize").val(data.serviceSize);
-                            $("#PlacerType").val(data.placerType);
-                            $("#Routing").val(data.routing);
                             $("#Timeout").val(data.timeout);
                             $("#Bandwidth").val(data.bandwidth);
                             $("#Strategy").val(data.strategy);

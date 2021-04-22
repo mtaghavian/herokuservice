@@ -47,14 +47,12 @@ public class EvaluationController {
         sessionParams.counter = 0;
         String networkTopology = params.get("networkTopology");
         String strategy = params.get("strategy");
-        String placerType = params.get("placerType");
-        String routing = params.get("routing");
         String timeout = params.get("timeout");
         List<FileEntry> fileEntry = fileEntryService.findByName(networkTopology);
         NetworkGraph networkGraph = ImportExportManager.importFromXML(StreamUtils.readString(fileEntryService.getInputStream(fileEntry.get(0).getId())),
                 nodeCpuAndStorageMaxResources, nodeCpuAndStorageMaxResources, maxBandwidthAvailable);
-        sessionParams.placer = new Placer(networkGraph, null, true, PlacerType.valueOf(placerType),
-                RoutingType.valueOf(routing), PlacerStrategy.valueOf(strategy),
+        sessionParams.placer = new Placer(networkGraph, null, true, PlacerType.FirstFound,
+                RoutingType.HopCount, PlacerStrategy.valueOf(strategy),
                 Integer.parseInt(timeout), null);
         new Thread(new Evaluator(sessionParams)).start();
         return "ok";
