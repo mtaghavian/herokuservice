@@ -24,6 +24,7 @@ public class Placer implements Runnable {
     private PlacerStrategy strategy;
     private long timeout;
     private PlacerTerminationAction placerTermination;
+    private boolean mixedMethodPass = false;
 
     public Placer(NetworkGraph networkGraph, ServiceGraph serviceGraph, boolean recursive, PlacerType placerType, RoutingType routingType,
                   PlacerStrategy s, long timeout, PlacerTerminationAction action) {
@@ -82,8 +83,13 @@ public class Placer implements Runnable {
                 totalFeasiblePlacements = 0;
                 bestFoundState = null;
                 if (PlacerStrategy.ADBO.equals(getStrategy())) {
-                    runHelper(PlacerStrategy.ABO, timeout / 2);
-                    if (!hasFoundPlacement()) {
+                    if (!mixedMethodPass) {
+                        runHelper(PlacerStrategy.ABO, timeout);
+                        if (!hasFoundPlacement()) {
+                            mixedMethodPass = true;
+                            runHelper(PlacerStrategy.DBO, timeout * 2);
+                        }
+                    } else {
                         runHelper(PlacerStrategy.DBO, timeout);
                     }
                 } else if (PlacerStrategy.DFF.equals(getStrategy())) {
