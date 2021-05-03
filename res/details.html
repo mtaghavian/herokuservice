@@ -32,7 +32,7 @@
 </div>
 
 <br/>
-<textarea id="textarea" class="uk-textarea CenteredItems" rows="27" style="text-align: left;font-size: 80%" placeholder="Textarea"></textarea>
+<textarea id="textarea" class="uk-textarea CenteredItems" rows="27" style="text-align: left;font-size: 80%; border-width: 0;" placeholder="Textarea"></textarea>
 
 <script>
 
@@ -41,7 +41,7 @@
     });
 
     $("#Return").click(function () {
-        window.location.href = '/results.html';
+        window.parent.loadPage("/results.html");
     });
 
     function reload(){

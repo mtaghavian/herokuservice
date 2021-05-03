@@ -18,23 +18,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 @Component
 public class HttpInterceptor implements HandlerInterceptor {
 
     public static final String resourcePath = "./res";
-
     @Autowired
     private ServletContext servletContext;
-
     @Autowired
     private SessionDao sessionDao;
-
     @Autowired
     private UserDao userDao;
-
     private Map<String, byte[]> cachedFiles = new HashMap<>();
     private Map<String, Long> cachedFilesDate = new HashMap<>();
     private Set<String> publicPaths = new HashSet<>();
@@ -75,12 +70,11 @@ public class HttpInterceptor implements HandlerInterceptor {
         Session session = sessionDao.findById(httpSession.getId());
         if (session == null) {
             session = new Session(httpSession.getId(), null, System.currentTimeMillis());
+            authenticateByBA(request, session);
+            authenticateByCookies(request, session);
+            sessionDao.save(session);
         }
-        authenticateByBA(request, session);
-        authenticateByCookies(request, session);
         session.setLastModified(System.currentTimeMillis());
-        sessionDao.save(session);
-
         if ("/api/user/signOut".equals(uri)) {
             session.signOut();
             response.sendRedirect("/signIn.html");
@@ -97,6 +91,7 @@ public class HttpInterceptor implements HandlerInterceptor {
                 return false;
             }
         }
+
         if (!uri.startsWith("/api/")) {
             response.setHeader("Access-Control-Allow-Origin", "*");
             response.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,PUT,OPTIONS");
@@ -137,11 +132,11 @@ public class HttpInterceptor implements HandlerInterceptor {
         for (String p : publicPaths) {
             if (p.contains("*")) {
                 p = p.substring(0, p.indexOf("*"));
-                if(uri.startsWith(p)){
+                if (uri.startsWith(p)) {
                     return true;
                 }
             } else {
-                if(p.equals(uri)){
+                if (p.equals(uri)) {
                     return true;
                 }
             }
@@ -158,26 +153,33 @@ public class HttpInterceptor implements HandlerInterceptor {
     }
 
     public void authenticateByCookies(HttpServletRequest request, Session session) {
-        Cookie cookie[] = request.getCookies();
-        if (cookie == null) {
-            return;
-        }
-        Properties cookies = new Properties();
-        for (Cookie c : cookie) {
-            cookies.put(c.getName(), c.getValue());
-        }
-        if (cookies.containsKey("auth")) {
-            String auth = "" + cookies.get("auth");
-            Optional<User> dbUser = userDao.findById(UUID.fromString(auth));
-            if (dbUser.isPresent()) {
-                session.setUser(dbUser.get());
+        try {
+            Cookie cookie[] = request.getCookies();
+            if (cookie == null) {
+                return;
             }
+            Properties cookies = new Properties();
+            for (Cookie c : cookie) {
+                cookies.put(c.getName(), c.getValue());
+            }
+            if (cookies.containsKey("auth")) {
+                String auth = "" + cookies.get("auth");
+                String[] split = StreamUtils.decrypt(auth, StreamUtils.samplePassword).split("\n");
+                String username = split[0];
+                String password = split[1];
+                User dbUser = userDao.findByUsername(username);
+                if ((dbUser != null) && dbUser.getPassword().equals(password)) {
+                    session.setUser(dbUser);
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
     private void authenticateByBA(HttpServletRequest request, Session session) {
-        String auth = request.getHeader("Authorization");
         try {
+            String auth = request.getHeader("Authorization");
             if (auth != null) {
                 String[] split = auth.split(" ");
                 if ("basic".equals(split[0].toLowerCase())) {
@@ -191,8 +193,8 @@ public class HttpInterceptor implements HandlerInterceptor {
                     }
                 }
             }
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 }

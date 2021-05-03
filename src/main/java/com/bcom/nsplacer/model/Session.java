@@ -1,4 +1,5 @@
 package com.bcom.nsplacer.model;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

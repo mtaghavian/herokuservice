@@ -116,7 +116,7 @@
     });
 
     $("#Return").click(function () {
-        window.location.href = '/index.html';
+        window.parent.loadPage("/evaluations.html");
     });
 
     function sendGet(sendUrl) {
@@ -132,7 +132,7 @@
         });
     }
 
-    function reload(){
+    function reload() {
         $("#downloadList").empty();
         $("#Spinner").show();
 

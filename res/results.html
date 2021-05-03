@@ -32,64 +32,64 @@
 </div>
 
 <div id="WaitPanel">
-    <div uk-spinner="ratio: 2" class="CenteredItems" style="text-align: center; padding-top: 50px;" id="Spinner"></div>
-    <div id="SpinnerInfo" class="CenteredItems" style="text-align: center; padding-top: 25px;" id="Spinner"></div>
+    <div id="Spinner" uk-spinner="ratio: 2" class="CenteredItems" style="text-align: center; padding-top: 50px;"></div>
+    <div id="SpinnerInfo" class="CenteredItems" style="text-align: center; padding-top: 25px;"></div>
     <div class="CenteredItems" style="text-align: center; padding-top: 25px;">
         <button id="StopButton" class="uk-button uk-button-default" >Cancel</button>
     </div>
 </div>
 
 <div id="DonePanel">
-<table id="table" class="uk-table uk-table-striped CenteredItems">
-    <thead>
-    <tr>
-        <th style="font-weight: bold;">Parameter</th>
-        <th style="font-weight: bold;">Value</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-        <td>Bandwidth Demand</td>
-        <td id="bandwidth"></td>
-    </tr>
-    <tr>
-        <td>Topology Type</td>
-        <td id="topology"></td>
-    </tr>
-    <tr>
-        <td>Strategy</td>
-        <td id="strategy"></td>
-    </tr>
-    <tr>
-        <td>Service Size</td>
-        <td id="size"></td>
-    </tr>
-    <tr>
-        <td style="font-weight: bold;">Number of Placements</td>
-        <td style="font-weight: bold;" id="placements"></td>
-    </tr>
-    <tr>
-        <td>Q0, Q1, Q2, Q3, Q4 Times</td>
-        <td id="qs"></td>
-    </tr>
-    <tr>
-        <td>Average Time</td>
-        <td id="avg"></td>
-    </tr>
-    <tr>
-        <td>Remained Bandwidth (%)</td>
-        <td id="rbandwidth"></td>
-    </tr>
-    <tr>
-        <td>Used Bandwidth per Service (%)</td>
-        <td id="ubandwidth"></td>
-    </tr>
-    </tbody>
-</table>
+    <table id="table" class="uk-table uk-table-striped CenteredItems">
+        <thead>
+        <tr>
+            <th style="font-weight: bold;">Parameter</th>
+            <th style="font-weight: bold;">Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Bandwidth Demand</td>
+            <td id="bandwidth"></td>
+        </tr>
+        <tr>
+            <td>Topology Type</td>
+            <td id="topology"></td>
+        </tr>
+        <tr>
+            <td>Strategy</td>
+            <td id="strategy"></td>
+        </tr>
+        <tr>
+            <td>Service Size</td>
+            <td id="size"></td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Number of Placements</td>
+            <td style="font-weight: bold;" id="placements"></td>
+        </tr>
+        <tr>
+            <td>Q0, Q1, Q2, Q3, Q4 Times</td>
+            <td id="qs"></td>
+        </tr>
+        <tr>
+            <td>Average Time</td>
+            <td id="avg"></td>
+        </tr>
+        <tr>
+            <td>Remained Bandwidth (%)</td>
+            <td id="rbandwidth"></td>
+        </tr>
+        <tr>
+            <td>Used Bandwidth / Service (%)</td>
+            <td id="ubandwidth"></td>
+        </tr>
+        </tbody>
+    </table>
 
-<div class="CenteredItems" style="text-align: center; padding-top: 20px;">
-    <button id="MoreDetails" class="uk-button uk-button-default" >More details</button>
-</div>
+    <div class="CenteredItems" style="text-align: center; padding-top: 20px;">
+        <button id="MoreDetails" class="uk-button uk-button-link" >See the list of placements</button>
+    </div>
 </div>
 
 <script>
@@ -99,6 +99,8 @@
     $.ajaxSetup({
         contentType: "application/json; charset=utf-8"
     });
+
+    var fadeDelay = 500;
 
     function cancel(){
         clearInterval(myInterval);
@@ -110,7 +112,7 @@
                 console.log("Function: error");
             },
             success: function (data, status) {
-                window.location.href = '/index.html';
+                window.parent.loadPage("/evaluations.html");
             }
         });
     }
@@ -120,7 +122,7 @@
     });
 
     $("#MoreDetails").click(function () {
-        window.location.href = '/details.html';
+        window.parent.loadPage("/details.html");
     });
 
     $("#StopButton").click(function () {
@@ -140,7 +142,7 @@
                     $("#SpinnerInfo").html(split[1]+" placements found!");
                 } else {
                     $("#WaitPanel").hide();
-                    $("#DonePanel").show();
+                    $("#DonePanel").fadeIn(fadeDelay);
                     var i = 1;
                     $("#bandwidth").html(split[i++]);
                     $("#topology").html(split[i++]);

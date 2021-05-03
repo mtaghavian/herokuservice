@@ -27,21 +27,22 @@ public class UserController {
     private UserDao userDao;
 
     @PostMapping("/signIn")
-    public String signIn(HttpServletRequest request, HttpServletResponse response, @RequestBody User user) throws IOException {
+    public String signIn(HttpServletRequest request, HttpServletResponse response, @RequestBody User user) throws Exception {
         HttpSession httpSession = request.getSession();
         User dbUser = userDao.findByUsername(user.getUsername());
         if ((dbUser != null) && dbUser.getPassword().equals(StreamUtils.hash(user.getPassword()))) {
             Session session = sessionDao.findById(httpSession.getId());
             session.setUser(dbUser);
-            //boolean saveCookie = (user.getRememberMe() != null && user.getRememberMe());
-            return "YES" + "\n" + dbUser.getId() + "\n" + "/index.html";
+            return "YES" + "\n"
+                    + StreamUtils.encrypt(dbUser.getUsername() + "\n" + dbUser.getPassword(), StreamUtils.samplePassword) + "\n"
+                    + "/index.html";
         } else {
             return "NO\nIncorrect username and/or password";
         }
     }
 
     @PostMapping("/signUp")
-    public String signUp(HttpServletRequest request, HttpServletResponse response, @RequestBody User user) throws IOException {
+    public String signUp(HttpServletRequest request, HttpServletResponse response, @RequestBody User user) throws Exception {
         HttpSession httpSession = request.getSession();
         User dbUser = userDao.findByUsername(user.getUsername());
         if (dbUser == null) {

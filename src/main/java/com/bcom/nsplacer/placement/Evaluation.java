@@ -47,61 +47,61 @@ public class Evaluation {
         System.out.println();
     }
 
-    public static void eval1() throws Exception {
-        String SNTopology = Arrays.asList("./samples of network graphs/zoo-topologies/BtEurope.graphml.xml",
+    public static void evaluation() throws Exception {
+
+        for (String SNTopology : Arrays.asList("./samples of network graphs/zoo-topologies/BtEurope.graphml.xml",
                 "./samples of network graphs/zoo-topologies/BtAsiaPac.graphml.xml",
-                "./samples of network graphs/zoo-topologies/BtNorthAmerica.graphml.xml").get(0);
+                "./samples of network graphs/zoo-topologies/BtNorthAmerica.graphml.xml")) {
 
-        PlacerType placerType = PlacerType.FirstFound;
+            PlacerType placerType = PlacerType.FirstFound;
+            System.out.println(SNTopology);
+            NetworkGraph networkGraph = ImportExportManager.importFromXML(StreamUtils.readString(new File(SNTopology)), nodeCpuAndStorageMaxResources, nodeCpuAndStorageMaxResources, maxBandwidthAvailable);
+            System.out.println("Demand\tServiceTopology\tMethod\tServiceSize\t#PlacedServices\tQ0\tQ1\tQ2\tQ3\tQ4\tAverage\tFinalRemainedBandwidthPercent\tAverageUsedBandwidthPercent");
+            for (int maxBandwidthDemand = 1; maxBandwidthDemand <= maxBandwidthAvailable; maxBandwidthDemand++) {
+                for (TopologyType topologyType : Arrays.asList(TopologyType.DaisyChain, TopologyType.Ring, TopologyType.Star)) {
+                    for (PlacerStrategy strategy : Arrays.asList(PlacerStrategy.ADBO, PlacerStrategy.ABO, PlacerStrategy.DBO, PlacerStrategy.EIFF, PlacerStrategy.EDFF)) {
+                        for (int serviceSize = 3; serviceSize <= 8; serviceSize++) {
+                            Placer placer = new Placer(networkGraph, null, true, placerType, RoutingType.HopCount, strategy, timeout, null);
 
-        System.out.println(SNTopology);
-        NetworkGraph networkGraph = ImportExportManager.importFromXML(StreamUtils.readString(new File(SNTopology)), nodeCpuAndStorageMaxResources, nodeCpuAndStorageMaxResources, maxBandwidthAvailable);
-
-        System.out.println("Demand\tServiceTopology\tMethod\tServiceSize\t#PlacedServices\tQ0\tQ1\tQ2\tQ3\tQ4\tAverage\tFinalRemainedBandwidthPercent\tAverageUsedBandwidthPercent");
-        for (int maxBandwidthDemand = 1; maxBandwidthDemand <= maxBandwidthAvailable; maxBandwidthDemand++) {
-            for (TopologyType topologyType : Arrays.asList(TopologyType.DaisyChain, TopologyType.Ring, TopologyType.Star)) {
-                for (PlacerStrategy strategy : Arrays.asList(PlacerStrategy.ADBO, PlacerStrategy.ABO, PlacerStrategy.DBO, PlacerStrategy.EIFF, PlacerStrategy.EDFF)) {
-                    for (int serviceSize = 3; serviceSize <= 8; serviceSize++) {
-                        Placer placer = new Placer(networkGraph, null, true, placerType, RoutingType.HopCount, strategy, timeout, null);
-
-                        int cnt = 0;
-                        List<Long> times = new ArrayList<>();
-                        Random random = null;
-                        ServiceGraph serviceGraph = new ServiceGraph();
-                        while (true) {
-                            serviceGraph.create(random, topologyType, serviceSize, maxCpuDemand, maxStorageDemand, maxBandwidthDemand);
-                            placer.setServiceGraph(serviceGraph);
-                            placer.run();
-                            if (placer.hasFoundPlacement()) {
-                                placer.applyNetworkStateFromBestFoundPlacement();
-                                cnt++;
-                                times.add(placer.getExecutionTime());
-                            } else {
-                                String precision = "%.2f";
-                                double percentRemaining = ((double) placer.getNetworkGraph().getTotalRemainingResourceValue(false, ResourceType.Bandwidth) /
-                                        placer.getNetworkGraph().getTotalMaximumResourceValue(false, ResourceType.Bandwidth) * 100.0);
-                                double usedResourcePerServicePercent = (100.0 - percentRemaining) / cnt;
-                                List<Long> quartiles = MathUtils.quartile(times);
-                                if (quartiles.isEmpty()) {
-                                    for (int i = 0; i < 5; i++) {
-                                        quartiles.add(0l);
+                            int cnt = 0;
+                            List<Long> times = new ArrayList<>();
+                            Random random = null;
+                            ServiceGraph serviceGraph = new ServiceGraph();
+                            while (true) {
+                                serviceGraph.create(random, topologyType, serviceSize, maxCpuDemand, maxStorageDemand, maxBandwidthDemand);
+                                placer.setServiceGraph(serviceGraph);
+                                placer.run();
+                                if (placer.hasFoundPlacement()) {
+                                    placer.applyNetworkStateFromBestFoundPlacement();
+                                    cnt++;
+                                    times.add(placer.getExecutionTime());
+                                } else {
+                                    String precision = "%.2f";
+                                    double percentRemaining = ((double) placer.getNetworkGraph().getTotalRemainingResourceValue(false, ResourceType.Bandwidth) /
+                                            placer.getNetworkGraph().getTotalMaximumResourceValue(false, ResourceType.Bandwidth) * 100.0);
+                                    double usedResourcePerServicePercent = (100.0 - percentRemaining) / cnt;
+                                    List<Long> quartiles = MathUtils.quartile(times);
+                                    if (quartiles.isEmpty()) {
+                                        for (int i = 0; i < 5; i++) {
+                                            quartiles.add(0l);
+                                        }
                                     }
+                                    System.out.println(maxBandwidthDemand
+                                            + "\t" + topologyType
+                                            + "\t" + strategy
+                                            + "\t" + serviceSize
+                                            + "\t" + cnt
+                                            + "\t" + quartiles.get(0)
+                                            + "\t" + quartiles.get(1)
+                                            + "\t" + quartiles.get(2)
+                                            + "\t" + quartiles.get(3)
+                                            + "\t" + quartiles.get(4)
+                                            + "\t" + (int) MathUtils.average(times)
+                                            + "\t" + String.format(precision, percentRemaining)
+                                            + "\t" + String.format(precision, usedResourcePerServicePercent)
+                                    );
+                                    break;
                                 }
-                                System.out.println(maxBandwidthDemand
-                                        + "\t" + topologyType
-                                        + "\t" + strategy
-                                        + "\t" + serviceSize
-                                        + "\t" + cnt
-                                        + "\t" + quartiles.get(0)
-                                        + "\t" + quartiles.get(1)
-                                        + "\t" + quartiles.get(2)
-                                        + "\t" + quartiles.get(3)
-                                        + "\t" + quartiles.get(4)
-                                        + "\t" + (int) MathUtils.average(times)
-                                        + "\t" + String.format(precision, percentRemaining)
-                                        + "\t" + String.format(precision, usedResourcePerServicePercent)
-                                );
-                                break;
                             }
                         }
                     }
@@ -111,17 +111,17 @@ public class Evaluation {
     }
 
     public static void main(String[] args) throws Exception {
-        eval1();
+        evaluation();
         //compareTheResults();
     }
 
     public static void compareTheResults() throws Exception {
 
-        String files[] = new String[]{
-                //"C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTEUROPE-RECURSION.xlsx"//,
-                "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTEUROPE2.xlsx",
-                "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTASIA2.xlsx",
-                "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTAMERICA2.xlsx"
+        String files[] = new String[] {
+            //"C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTEUROPE-RECURSION.xlsx"//,
+            "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTEUROPE3.xlsx",
+            "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTASIA3.xlsx",
+            "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTAMERICA3.xlsx"
         };
 
         File vbsFile = new File("XlsToCsv.vbs");
@@ -180,10 +180,7 @@ public class Evaluation {
                 } else {
                     double r = echele[serviceSize - 3] / (placedServiceCount == 0.0 ? 1.0 : placedServiceCount);
                     if (r < 1.0) {
-                        System.out.println(substrateNetwork);
-                        System.out.println(r);
                         System.out.println(line);
-                        System.out.println();
                     }
                     map.get(strategy).add(r);
                 }

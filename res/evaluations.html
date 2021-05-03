@@ -1,0 +1,242 @@
+<html>
+<head>
+    <title>Network Service Placer</title>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/css/uikit.min.css" />
+
+    <!-- UIkit JS -->
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit-icons.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="HeaderHeight" style="width: 100%; background-color: #ffdfdf; position: fixed;top: 0px;z-index: 1;">
+    <div class="CenteredItems" style="display: inline-flex; flex-direction: row-reverse;">
+        <div class="HeaderHeight uk-inline" style="text-align: center;flex: 0 0 50px;">
+            &nbsp <img src="menu.svg" style="width:20px; height: 20px;" alt=""/>
+            &nbsp
+            <div uk-dropdown="mode: click; pos: bottom-right; animation: uk-animation-slide-top-small; duration: 500" style="">
+                <ul class="uk-nav uk-dropdown-nav">
+                    <li><a id="SignOut" class="" href="#">Sign out</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="HeaderHeight" style="text-align: center;flex: auto;">
+            <img src="favicon.png" style="width:20px; height: 20px;" alt=""/>
+            &nbsp&nbsp Network Service Placer
+        </div>
+    </div>
+</div>
+<br/>
+<form class="uk-form-stacked">
+    <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Substrate Network</span></h1>
+
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label" for="SNTopology">Topology</label>
+        <div class="uk-form-controls">
+            <select class="uk-select" id="SNTopology" onchange="SNChange()">
+            </select>
+        </div>
+    </div>
+
+    <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Service Graph</span></h1>
+
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="SGTopology">Topology</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="SGSize" style="display: inline-block;">Size</label>
+        <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
+            <select class="uk-select" id="SGTopology">
+            </select>
+        </div>
+        <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
+            <select class="uk-select" id="SGSize">
+            </select>
+        </div>
+    </div>
+    <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Placer</span></h1>
+    <div class="uk-margin CenteredItems" style="display: block;">
+        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="Timeout">Timout</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="Bandwidth" style="display: inline-block;">Bandwidth Demand</label>
+        <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
+            <select class="uk-select" id="Timeout">
+            </select>
+        </div>
+        <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
+            <select class="uk-select" id="Bandwidth">
+            </select>
+        </div>
+    </div>
+    <div class="uk-margin CenteredItems">
+        <label class="uk-form-label" for="Strategy">Strategy</label>
+        <div class="uk-form-controls">
+            <select class="uk-select" id="Strategy">
+            </select>
+        </div>
+    </div>
+
+    <button type="button" class="uk-button uk-button-primary CenteredItems" id="Place">Place</button>
+</form>
+<script src="script.js"></script>
+<script>
+    var uploadSNFileMessage = "Upload an arbitrary zoo topology file";
+
+    function initialFields() {
+        $("#SGTopology").append(createOption("DaisyChain"));
+        $("#SGTopology").append(createOption("Ring"));
+        $("#SGTopology").append(createOption("Star"));
+
+        $("#SGSize").append(createOption("3"));
+        $("#SGSize").append(createOption("4"));
+        $("#SGSize").append(createOption("5"));
+        $("#SGSize").append(createOption("6"));
+        $("#SGSize").append(createOption("7"));
+        $("#SGSize").append(createOption("8"));
+
+        $("#Timeout").append(createOption("2000"));
+        $("#Timeout").append(createOption("4000"));
+        $("#Timeout").append(createOption("8000"));
+        $("#Timeout").append(createOption("16000"));
+
+        $("#Bandwidth").append(createOption("1"));
+        $("#Bandwidth").append(createOption("2"));
+        $("#Bandwidth").append(createOption("3"));
+        $("#Bandwidth").append(createOption("4"));
+        $("#Bandwidth").append(createOption("5"));
+        $("#Bandwidth").append(createOption("6"));
+        $("#Bandwidth").append(createOption("7"));
+        $("#Bandwidth").append(createOption("8"));
+        $("#Bandwidth").append(createOption("9"));
+        $("#Bandwidth").append(createOption("10"));
+
+        $("#Strategy").append(createOption("ADBO"));
+        $("#Strategy").append(createOption("ABO"));
+        $("#Strategy").append(createOption("DBO"));
+        $("#Strategy").append(createOption("EDFF"));
+        $("#Strategy").append(createOption("EIFF"));
+        $("#Strategy").append(createOption("DFF"));
+        $("#Strategy").append(createOption("IFF"));
+    }
+
+    function initSNTopologies() {
+        var option = document.createElement('option');
+        $("#SNTopology").append(option);
+        option = document.createElement('option');
+        option.innerHTML = uploadSNFileMessage;
+        $("#SNTopology").append(option);
+
+        initialFields();
+    }
+
+    function SNChange() {
+        var x = document.getElementById("SNTopology").value;
+        if(x === uploadSNFileMessage) {
+            window.parent.loadPage("/files.html");
+        }
+    }
+
+    $("#SignOut").click(function () {
+        document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        window.location.href = '/api/user/signOut';
+    });
+
+    $.ajaxSetup({
+        contentType: "application/json; charset=utf-8"
+    });
+
+    function onerror(data) {
+        var text = HTTP_STATUS_CODES[data.status];
+        UIkit.notification({message: text, status: 'warning', pos: 'bottom-center', timeout: 1000})
+    }
+
+    var createOption = function (text){
+        var option = document.createElement('option');
+        option.innerHTML = text;
+        return option;
+    }
+
+    var place = function () {
+        $("#Place").prop('disabled', true);
+        $.ajax({
+            url: "/api/eval/start",
+            type: "POST",
+            error: function (data, status) {
+                $("#Place").prop('disabled', false);
+                onerror(data);
+            },
+            success: function (data, status) {
+                console.log("Function: success");
+                window.parent.loadPage("/results.html");
+            },
+            data: JSON.stringify({
+                networkTopology: $("#SNTopology").val(),
+                serviceTopology: $("#SGTopology").val(),
+                serviceSize: $("#SGSize").val(),
+                timeout: $("#Timeout").val(),
+                bandwidth: $("#Bandwidth").val(),
+                strategy: $("#Strategy").val()
+            })
+        });
+    };
+    $("#Place").click(place);
+
+    function reload(){
+        $("#SNTopology").empty();
+
+        $.ajax({
+            url: "/api/file/list",
+            type: "GET",
+            error: function (data, status) {
+                onerror(data);
+            },
+            success: function (data, status) {
+                if(data.length === 0){
+                    initSNTopologies();
+                    return;
+                }
+                var option;
+
+                for (var key in data) {
+                    option = document.createElement('option');
+                    option.innerHTML = data[key].name;
+                    $("#SNTopology").append(option);
+                }
+                option = document.createElement('option');
+                option.innerHTML = uploadSNFileMessage;
+                $("#SNTopology").append(option);
+
+                $.ajax({
+                    url: "/api/eval/getParams",
+                    type: "GET",
+                    error: function (data, status) {
+                        onerror(data);
+                    },
+                    success: function (data, status) {
+                        initialFields();
+
+                        if(data.hasOwnProperty('networkTopology')) {
+                            $("#SNTopology").val(data.networkTopology);
+                            $("#SGTopology").val(data.serviceTopology);
+                            $("#SGSize").val(data.serviceSize);
+                            $("#Timeout").val(data.timeout);
+                            $("#Bandwidth").val(data.bandwidth);
+                            $("#Strategy").val(data.strategy);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    reload();
+
+</script>
+</body>
+</html>

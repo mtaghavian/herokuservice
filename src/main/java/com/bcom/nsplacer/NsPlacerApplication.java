@@ -51,7 +51,7 @@ public class NsPlacerApplication implements ApplicationContextAware {
 
     @PostConstruct
     public void starter() {
-        if (userDao.findAll().isEmpty()) {
+        if (userDao.count() == 0) {
             User user = new User();
             user.setUsername(adminUsername);
             user.setPassword(StreamUtils.hash("mnts"));

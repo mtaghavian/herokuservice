@@ -4,11 +4,16 @@ import com.bcom.nsplacer.NsPlacerApplication;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.security.MessageDigest;
+import java.util.Base64;
 
 public class StreamUtils {
 
+    public static final String samplePassword = "Masoud Taghavian";
     private static ObjectMapper jsonMapper;
 
     private static void initMapper() {
@@ -90,6 +95,26 @@ public class StreamUtils {
             ex.printStackTrace();
         }
         return "";
+    }
+
+    public static String encrypt(String text, String key) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("MD5");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        cipher.init(Cipher.ENCRYPT_MODE,
+                new SecretKeySpec(digest.digest(key.getBytes("UTF-8")), "AES"),
+                new IvParameterSpec(new byte[16]));
+        byte[] encrypted = cipher.doFinal(text.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(encrypted);
+    }
+
+    public static String decrypt(String text, String key) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("MD5");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        cipher.init(Cipher.DECRYPT_MODE,
+                new SecretKeySpec(digest.digest(key.getBytes("UTF-8")), "AES"),
+                new IvParameterSpec(new byte[16]));
+        byte[] original = cipher.doFinal(Base64.getDecoder().decode(text));
+        return new String(original, "UTF-8");
     }
 
     public static String hash(byte b[]) {
