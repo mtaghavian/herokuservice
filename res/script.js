@@ -39,4 +39,4 @@ var HTTP_STATUS_CODES = {
     '505' : 'HTTP Version Not Supported'
 };
 
-var fadeDelay = 700;
+var fadeDelay = 500;
