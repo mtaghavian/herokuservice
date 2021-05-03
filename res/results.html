@@ -91,7 +91,7 @@
         <button id="MoreDetails" class="uk-button uk-button-link" >See the list of placements</button>
     </div>
 </div>
-
+<script src="script.js"></script>
 <script>
 
     $("#DonePanel").hide();
@@ -99,8 +99,6 @@
     $.ajaxSetup({
         contentType: "application/json; charset=utf-8"
     });
-
-    var fadeDelay = 500;
 
     function cancel(){
         clearInterval(myInterval);

@@ -89,6 +89,9 @@
     var uploadSNFileMessage = "Upload an arbitrary zoo topology file";
 
     function initialFields() {
+        $("#SNTopology").append(createOption(""));
+        $("#SNTopology").append(createOption(uploadSNFileMessage));
+
         $("#SGTopology").append(createOption("DaisyChain"));
         $("#SGTopology").append(createOption("Ring"));
         $("#SGTopology").append(createOption("Star"));
@@ -123,16 +126,6 @@
         $("#Strategy").append(createOption("EIFF"));
         $("#Strategy").append(createOption("DFF"));
         $("#Strategy").append(createOption("IFF"));
-    }
-
-    function initSNTopologies() {
-        var option = document.createElement('option');
-        $("#SNTopology").append(option);
-        option = document.createElement('option');
-        option.innerHTML = uploadSNFileMessage;
-        $("#SNTopology").append(option);
-
-        initialFields();
     }
 
     function SNChange() {
@@ -187,9 +180,9 @@
     };
     $("#Place").click(place);
 
-    function reload(){
-        $("#SNTopology").empty();
+    initialFields();
 
+    function reload(){
         $.ajax({
             url: "/api/file/list",
             type: "GET",
@@ -198,9 +191,9 @@
             },
             success: function (data, status) {
                 if(data.length === 0){
-                    initSNTopologies();
                     return;
                 }
+                $("#SNTopology").empty();
                 var option;
 
                 for (var key in data) {
@@ -219,18 +212,28 @@
                         onerror(data);
                     },
                     success: function (data, status) {
-                        initialFields();
-
                         if(data.hasOwnProperty('networkTopology')) {
                             $("#SNTopology").val(data.networkTopology);
-                            $("#SGTopology").val(data.serviceTopology);
-                            $("#SGSize").val(data.serviceSize);
-                            $("#Timeout").val(data.timeout);
-                            $("#Bandwidth").val(data.bandwidth);
-                            $("#Strategy").val(data.strategy);
                         }
                     }
                 });
+            }
+        });
+
+        $.ajax({
+            url: "/api/eval/getParams",
+            type: "GET",
+            error: function (data, status) {
+                onerror(data);
+            },
+            success: function (data, status) {
+                if(data.hasOwnProperty('networkTopology')) {
+                    $("#SGTopology").val(data.serviceTopology);
+                    $("#SGSize").val(data.serviceSize);
+                    $("#Timeout").val(data.timeout);
+                    $("#Bandwidth").val(data.bandwidth);
+                    $("#Strategy").val(data.strategy);
+                }
             }
         });
     }
