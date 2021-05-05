@@ -157,6 +157,14 @@
 
     var place = function () {
         $("#Place").prop('disabled', true);
+        window.parent.parameters = {
+            networkTopology: $("#SNTopology").val(),
+            serviceTopology: $("#SGTopology").val(),
+            serviceSize: $("#SGSize").val(),
+            timeout: $("#Timeout").val(),
+            bandwidth: $("#Bandwidth").val(),
+            strategy: $("#Strategy").val()
+        };
         $.ajax({
             url: "/api/eval/start",
             type: "POST",
@@ -168,14 +176,7 @@
                 console.log("Function: success");
                 window.parent.loadPage("/results.html");
             },
-            data: JSON.stringify({
-                networkTopology: $("#SNTopology").val(),
-                serviceTopology: $("#SGTopology").val(),
-                serviceSize: $("#SGSize").val(),
-                timeout: $("#Timeout").val(),
-                bandwidth: $("#Bandwidth").val(),
-                strategy: $("#Strategy").val()
-            })
+            data: JSON.stringify(window.parent.parameters)
         });
     };
     $("#Place").click(place);
@@ -205,37 +206,19 @@
                 option.innerHTML = uploadSNFileMessage;
                 $("#SNTopology").append(option);
 
-                $.ajax({
-                    url: "/api/eval/getParams",
-                    type: "GET",
-                    error: function (data, status) {
-                        onerror(data);
-                    },
-                    success: function (data, status) {
-                        if(data.hasOwnProperty('networkTopology')) {
-                            $("#SNTopology").val(data.networkTopology);
-                        }
-                    }
-                });
-            }
-        });
-
-        $.ajax({
-            url: "/api/eval/getParams",
-            type: "GET",
-            error: function (data, status) {
-                onerror(data);
-            },
-            success: function (data, status) {
-                if(data.hasOwnProperty('networkTopology')) {
-                    $("#SGTopology").val(data.serviceTopology);
-                    $("#SGSize").val(data.serviceSize);
-                    $("#Timeout").val(data.timeout);
-                    $("#Bandwidth").val(data.bandwidth);
-                    $("#Strategy").val(data.strategy);
+                if(window.parent.parameters.hasOwnProperty('networkTopology')) {
+                    $("#SNTopology").val(window.parent.parameters.networkTopology);
                 }
             }
         });
+
+        if(window.parent.parameters.hasOwnProperty('networkTopology')) {
+            $("#SGTopology").val(window.parent.parameters.serviceTopology);
+            $("#SGSize").val(window.parent.parameters.serviceSize);
+            $("#Timeout").val(window.parent.parameters.timeout);
+            $("#Bandwidth").val(window.parent.parameters.bandwidth);
+            $("#Strategy").val(window.parent.parameters.strategy);
+        }
     }
 
     reload();

@@ -29,6 +29,9 @@
 <script src="script.js"></script>
 <script>
 
+    var parameters = {};
+    var page = null;
+
     $.ajaxSetup({
         contentType: "application/json; charset=utf-8"
     });
@@ -38,7 +41,18 @@
         UIkit.notification({message: text, status: 'warning', pos: 'bottom-center', timeout: 1000})
     }
 
-    var page = null;
+    function stop() {
+        $.ajax({
+            url: "/api/eval/stop",
+            type: "GET",
+            error: function (data, status) {
+                console.log("Function: error");
+            },
+            success: function (data, status) {
+                console.log("Function: success");
+            }
+        });
+    }
 
     function loadPage(addr) {
         $("#ChangePageSpinner").show();

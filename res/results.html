@@ -40,21 +40,29 @@
 </div>
 
 <div id="DonePanel">
-    <table id="table" class="uk-table uk-table-striped CenteredItems">
+    <table id="table" class="uk-table uk-table-striped CenteredItems" style="font-size: 85%;">
         <thead>
         <tr>
-            <th style="font-weight: bold;">Parameter</th>
-            <th style="font-weight: bold;">Value</th>
+            <th style="font-weight: bold;"></th>
+            <th style="font-weight: bold;"></th>
         </tr>
         </thead>
         <tbody>
+        <tr>
+            <td>SN Topology</td>
+            <td id="NetworkTopology"></td>
+        </tr>
         <tr>
             <td>Bandwidth Demand</td>
             <td id="bandwidth"></td>
         </tr>
         <tr>
-            <td>Topology Type</td>
+            <td>SG Topology</td>
             <td id="topology"></td>
+        </tr>
+        <tr>
+            <td>Timeout</td>
+            <td id="Timeout"></td>
         </tr>
         <tr>
             <td>Strategy</td>
@@ -100,23 +108,10 @@
         contentType: "application/json; charset=utf-8"
     });
 
-    function cancel(){
-        clearInterval(myInterval);
-        $("#StopButton").prop('disabled', true);
-        $.ajax({
-            url: "/api/eval/stop",
-            type: "GET",
-            error: function (data, status) {
-                console.log("Function: error");
-            },
-            success: function (data, status) {
-                window.parent.loadPage("/evaluations.html");
-            }
-        });
-    }
-
     $("#Return").click(function () {
-        cancel();
+        clearInterval(myInterval);
+        window.parent.loadPage("/evaluations.html");
+        window.parent.stop();
     });
 
     $("#MoreDetails").click(function () {
@@ -124,7 +119,7 @@
     });
 
     $("#StopButton").click(function () {
-        cancel();
+        window.parent.stop();
     });
 
     function reload(){
@@ -141,6 +136,10 @@
                 } else {
                     $("#WaitPanel").hide();
                     $("#DonePanel").fadeIn(fadeDelay);
+
+                    $("#NetworkTopology").html(window.parent.parameters.networkTopology);
+                    $("#Timeout").html(window.parent.parameters.timeout);
+
                     var i = 1;
                     $("#bandwidth").html(split[i++]);
                     $("#topology").html(split[i++]);
