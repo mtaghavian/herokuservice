@@ -74,6 +74,12 @@ public class EvaluationController {
         return sessionParams.placementDetails;
     }
 
+    @GetMapping("/getParams")
+    public Map<String, String> getParams(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        final SessionParams sessionParams = getSessionParams(request);
+        return sessionParams.params;
+    }
+
     @GetMapping("/stop")
     public String stop(HttpServletRequest request, HttpServletResponse response) throws IOException {
         final SessionParams sessionParams = getSessionParams(request);
