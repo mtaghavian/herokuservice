@@ -1,0 +1,63 @@
+<html>
+<head>
+    <title>Network Service Placer</title>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/css/uikit.min.css" />
+
+    <!-- UIkit JS -->
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/uikit@3.6.18/dist/js/uikit-icons.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="HeaderHeight" style="width: 100%; background-color: #ffdfdf; position: fixed;top: 0px;z-index: 1;">
+    <div class="CenteredItems" style="display: inline-flex; flex-direction: row-reverse;">
+        <div class="HeaderHeight" style="text-align: center;flex: auto;">
+            <img src="favicon.png" style="width:20px; height: 20px;" alt=""/>
+            &nbsp&nbsp Specs
+        </div>
+        <div class="HeaderHeight" id="Return" style="text-align: center;flex: 0 0 50px;">
+            &nbsp <img src="left-arrow.svg" style="width:20px; height: 20px;" alt=""/>
+            &nbsp
+        </div>
+    </div>
+</div>
+
+<br/>
+<textarea id="textarea" class="uk-textarea CenteredItems" rows="27" style="text-align: left;font-size: 80%; border-width: 0;" placeholder="Textarea"></textarea>
+
+<script>
+
+    $.ajaxSetup({
+        contentType: "application/json; charset=utf-8"
+    });
+
+    $("#Return").click(function () {
+        window.parent.loadPage("/index.html");
+    });
+
+    function reload(){
+        $.ajax({
+            url: "/api/general/specs",
+            type: "GET",
+            error: function (data, status) {
+                console.log("Function: error");
+            },
+            success: function (data, status) {
+                $("#textarea").val(data);
+            }
+        });
+    }
+    reload();
+
+</script>
+</body>
+</html>

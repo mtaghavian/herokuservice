@@ -47,16 +47,44 @@ public class FileEntryService extends BaseService<FileEntry> {
         return file;
     }
 
+    private UUID getUUIDFromArray(String split[], int offset) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 16; i++) {
+            int b = Integer.parseInt(split[i + offset]) & 0xff;
+            String h = String.format("%h", b);
+            h = (h.length() == 1) ? ("0" + h) : h;
+            sb.append(h);
+            if (i == 3 || i == 5 || i == 7 || i == 9) {
+                sb.append("-");
+            }
+        }
+        return UUID.fromString(sb.toString());
+    }
+
+    private FileData fetchFileData(UUID id) {
+        String result = fileDataDao.fetchIdAndNext(id);
+        if (result != null) {
+            FileData data = new FileData();
+            String[] split = result.split(",");
+            data.setId(getUUIDFromArray(split, 0));
+            if (split.length == 32) {
+                data.setNext(getUUIDFromArray(split, 16));
+            }
+            return data;
+        }
+        return null;
+    }
+
     @Override
     public void delete(UUID id) {
         Optional<FileEntry> fileEntryOptional = fileEntryDao.findById(id);
         if (fileEntryOptional.isPresent()) {
-            Optional<FileData> data = fileDataDao.findById(fileEntryOptional.get().getFileDataId());
-            while (data != null && data.isPresent()) {
-                UUID dataId = data.get().getId();
-                UUID nextId = data.get().getNext();
-                data = (nextId == null) ? null : fileDataDao.findById(nextId);
-                fileDataDao.deleteById(dataId);
+            FileData data = fetchFileData(fileEntryOptional.get().getFileDataId());
+            while (data != null) {
+                UUID dataId = data.getId();
+                UUID nextId = data.getNext();
+                data = (nextId == null) ? null : fetchFileData(nextId);
+                fileDataDao.deleteWithoutLoading(dataId);
             }
             fileEntryDao.deleteById(id);
         }
