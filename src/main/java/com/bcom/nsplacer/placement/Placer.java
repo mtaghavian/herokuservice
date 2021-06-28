@@ -1,10 +1,13 @@
 package com.bcom.nsplacer.placement;
 
+import com.bcom.nsplacer.placement.enums.ObjectiveType;
+import com.bcom.nsplacer.placement.enums.PlacerType;
+import com.bcom.nsplacer.placement.enums.SearchStrategy;
+import com.bcom.nsplacer.placement.routing.RoutingAlgorithm;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Setter
 @Getter
@@ -18,52 +21,62 @@ public class Placer implements Runnable {
     private SearchState bestFoundState;
     private int totalFeasiblePlacements = 0;
     private long beginTime, finishTime;
-    private boolean recursive;
+    private boolean backtracking, shuffle;
     private PlacerType placerType;
-    private RoutingType routingType;
-    private PlacerStrategy strategy;
+    private RoutingAlgorithm routingAlgorithm;
+    private SearchStrategy strategy;
     private long timeout;
     private PlacerTerminationAction placerTermination;
-    private int combinedMethodState = 0;
+    private ObjectiveType objectiveType;
+    private boolean checkOverallLatency;
 
-    public Placer(NetworkGraph networkGraph, ServiceGraph serviceGraph, boolean recursive, PlacerType placerType, RoutingType routingType,
-                  PlacerStrategy s, long timeout, PlacerTerminationAction action) {
-        this.strategy = s;
+    public Placer(NetworkGraph networkGraph, ServiceGraph serviceGraph,
+                  boolean backtracking, boolean shuffle, boolean checkOverallLatency,
+                  PlacerType placerType,
+                  ObjectiveType objectiveType,
+                  RoutingAlgorithm routingAlgorithm,
+                  SearchStrategy strategy,
+                  long timeout, PlacerTerminationAction action) {
+        this.strategy = strategy;
         this.networkGraph = networkGraph.clone();
-        this.recursive = recursive;
+        this.backtracking = backtracking;
+        this.shuffle = shuffle;
         this.placerType = placerType;
-        this.routingType = routingType;
+        this.objectiveType = objectiveType;
         this.timeout = timeout;
         this.placerTermination = action;
+        this.routingAlgorithm = routingAlgorithm;
         setServiceGraph(serviceGraph);
         totalCreatedStates = totalFeasibleStates = 0;
     }
 
-    public void setServiceGraph(ServiceGraph serviceGraph) {
-        if (serviceGraph != null) {
-            this.serviceGraph = serviceGraph.clone();
+    public void setServiceGraph(ServiceGraph g) {
+        if (g != null) {
+            this.serviceGraph = g.clone();
         }
     }
 
-    private void runHelper(PlacerStrategy s, long t) {
+    private void runHelper(SearchStrategy st, long tout) {
         long checkpoint = beginTime;
-        Fringe fringe = new Fringe(PlacerStrategy.ABO.equals(s));
-        SearchState root = new SearchState(networkGraph, serviceGraph.traverse(), 0, this, s);
+        Fringe fringe = new Fringe(SearchStrategy.ABO.equals(st), shuffle);
+        SearchState root = new SearchState(networkGraph, serviceGraph.traverse(), 0, this, st, checkOverallLatency);
         fringe.put(Arrays.asList(root));
-        while (!fringe.isEmpty() && running && ((System.currentTimeMillis() - beginTime) < t)) {
+        while (!fringe.isEmpty() && running && ((System.currentTimeMillis() - beginTime) < tout)) {
             SearchState state = fringe.take();
             if (state.isFeasible()) {
                 if (state.isTerminal()) {
                     totalFeasiblePlacements++;
-                    if ((bestFoundState == null) || (state.getOptimizerValue() > bestFoundState.getOptimizerValue())) {
+                    if ((bestFoundState == null) || (st.isMaximizer() ?
+                            (state.getObjectiveValue() > bestFoundState.getObjectiveValue()) :
+                            (state.getObjectiveValue() < bestFoundState.getObjectiveValue()))) {
                         bestFoundState = state;
+                        //System.out.println("placement found! objective-value: " + bestFoundState.getObjectiveValue());
                     }
                     if (PlacerType.FirstFound.equals(placerType)) {
                         break;
                     }
                 } else {
-                    List<SearchState> children = state.expand();
-                    fringe.put(children);
+                    fringe.put(state.expand());
                 }
             }
             long checkpointFinishTime = System.currentTimeMillis();
@@ -82,21 +95,23 @@ public class Placer implements Runnable {
             try {
                 totalFeasiblePlacements = 0;
                 bestFoundState = null;
-                if (PlacerStrategy.ADBO.equals(getStrategy())) {
-                    runHelper(PlacerStrategy.ABO, timeout);
+                if (SearchStrategy.VOTE.equals(getStrategy())) {
+                    runHelper(SearchStrategy.ABO, timeout);
                     if (!hasFoundPlacement()) {
-                        runHelper(PlacerStrategy.DBO, timeout * 2);
+                        //System.out.println("Search strategy changed! " + SearchStrategy.ABO + " -> " + SearchStrategy.DBO);
+                        runHelper(SearchStrategy.DBO, timeout * 2);
                         if (!hasFoundPlacement()) {
-                            runHelper(PlacerStrategy.EDFF, timeout * 3);
+                            //System.out.println("Search strategy changed! " + SearchStrategy.DBO + " -> " + SearchStrategy.EDFF);
+                            runHelper(SearchStrategy.EDFF, timeout * 3);
                         }
                     }
-                } else if (PlacerStrategy.DFF.equals(getStrategy())) {
-                    strategy = PlacerStrategy.EDFF;
-                    recursive = false;
+                } else if (SearchStrategy.DFF.equals(getStrategy())) {
+                    strategy = SearchStrategy.EDFF;
+                    backtracking = false;
                     runHelper(getStrategy(), timeout);
-                } else if (PlacerStrategy.IFF.equals(getStrategy())) {
-                    strategy = PlacerStrategy.EIFF;
-                    recursive = false;
+                } else if (SearchStrategy.IFF.equals(getStrategy())) {
+                    strategy = SearchStrategy.EIFF;
+                    backtracking = false;
                     runHelper(getStrategy(), timeout);
                 } else {
                     runHelper(getStrategy(), timeout);
@@ -135,7 +150,7 @@ public class Placer implements Runnable {
             sb.append("Best placement found summary: {" + "\n");
             sb.append("  Placement for nodes: " + bestFoundState.getPlacementNodeMap() + "\n");
             sb.append("  Placement for links: " + bestFoundState.getPlacementLinkMap() + "\n");
-            sb.append("  SAProbability: " + String.format("%.4f", bestFoundState.getOptimizerValue()) + "\n");
+            sb.append("  SAProbability: " + String.format("%.4f", bestFoundState.getObjectiveValue()) + "\n");
             sb.append("}" + "\n");
         }
         status = sb.toString();

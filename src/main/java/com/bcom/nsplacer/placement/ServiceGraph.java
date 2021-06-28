@@ -1,5 +1,7 @@
 package com.bcom.nsplacer.placement;
 
+import com.bcom.nsplacer.placement.enums.ResourceType;
+import com.bcom.nsplacer.placement.enums.TopologyType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,6 +20,8 @@ public class ServiceGraph {
     private List<VNF> vnfs = new ArrayList<>();
 
     private List<VirtualLink> virtualLinks = new ArrayList<>();
+
+    private int latency = 0;
 
     public List<VNF> traverse() {
         List<VNF> bfsList = new ArrayList<>();
@@ -69,7 +73,7 @@ public class ServiceGraph {
         return "Total remaining resources (cpu, storage, bandwidth) = (" + sumCpu + ", " + sumStorage + ", " + sumBandwidth + ")";
     }
 
-    public void create(Random random, TopologyType topologyType, int serviceSize, int maxCpuDemand, int maxStorageDemand, int maxBandwidthDemand) {
+    public void create(Random random, TopologyType topologyType, int serviceSize, int maxCpuDemand, int maxStorageDemand, int maxBandwidthDemand, int maxLatencyDemand) {
         vnfs.clear();
         virtualLinks.clear();
         setDataFlowSrcVNF("V1");
@@ -92,9 +96,10 @@ public class ServiceGraph {
                 l.setSrcVNF("V" + i);
                 l.setDstVNF("V" + (i + 1));
                 if (random != null) {
-                    l.setRandomValues(random, maxBandwidthDemand);
+                    l.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
                 } else {
                     l.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
+                    l.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
                 }
                 getVirtualLinks().add(l);
                 linkIndex++;
@@ -104,9 +109,10 @@ public class ServiceGraph {
                 clone.setSrcVNF(l.getDstVNF());
                 clone.setDstVNF(l.getSrcVNF());
                 if (random != null) {
-                    clone.setRandomValues(random, maxBandwidthDemand);
+                    clone.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
                 } else {
                     clone.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
+                    clone.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
                 }
                 getVirtualLinks().add(clone);
                 linkIndex++;
@@ -119,9 +125,10 @@ public class ServiceGraph {
                 l.setSrcVNF("V" + i);
                 l.setDstVNF("V" + ((i == serviceSize) ? 1 : (i + 1)));
                 if (random != null) {
-                    l.setRandomValues(random, maxBandwidthDemand);
+                    l.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
                 } else {
                     l.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
+                    l.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
                 }
                 getVirtualLinks().add(l);
                 linkIndex++;
@@ -131,9 +138,10 @@ public class ServiceGraph {
                 clone.setSrcVNF(l.getDstVNF());
                 clone.setDstVNF(l.getSrcVNF());
                 if (random != null) {
-                    clone.setRandomValues(random, maxBandwidthDemand);
+                    clone.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
                 } else {
                     clone.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
+                    clone.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
                 }
                 getVirtualLinks().add(clone);
                 linkIndex++;
@@ -146,9 +154,10 @@ public class ServiceGraph {
                 l.setSrcVNF("V" + 1);
                 l.setDstVNF("V" + (i + 1));
                 if (random != null) {
-                    l.setRandomValues(random, maxBandwidthDemand);
+                    l.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
                 } else {
                     l.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
+                    l.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
                 }
                 getVirtualLinks().add(l);
                 linkIndex++;
@@ -158,9 +167,10 @@ public class ServiceGraph {
                 clone.setSrcVNF(l.getDstVNF());
                 clone.setDstVNF(l.getSrcVNF());
                 if (random != null) {
-                    clone.setRandomValues(random, maxBandwidthDemand);
+                    clone.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
                 } else {
                     clone.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
+                    clone.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
                 }
                 getVirtualLinks().add(clone);
                 linkIndex++;

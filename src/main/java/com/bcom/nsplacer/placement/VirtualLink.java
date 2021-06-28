@@ -1,13 +1,11 @@
 package com.bcom.nsplacer.placement;
 
+import com.bcom.nsplacer.placement.enums.ResourceType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 @Getter
 @Setter
@@ -23,6 +21,7 @@ public class VirtualLink {
     public VirtualLink() {
         requiredResources = new LinkedList<>();
         requiredResources.add(new Resource(ResourceType.Bandwidth, 100));
+        requiredResources.add(new Resource(ResourceType.Latency, 100));
         label = "unknown";
     }
 
@@ -50,7 +49,11 @@ public class VirtualLink {
         l.setLabel(getLabel());
         l.setSrcVNF(getSrcVNF());
         l.setDstVNF(getDstVNF());
-        l.setRequiredResourceValue(ResourceType.Bandwidth, getRequiredResourceValue(ResourceType.Bandwidth));
+        l.requiredResources = new ArrayList<>();
+        for (Resource r : requiredResources) {
+            l.requiredResources.add(r.clone());
+            //l.setRequiredResourceValue(r.getType(), getRequiredResourceValue(r.getType()));
+        }
         return l;
     }
 
@@ -67,7 +70,8 @@ public class VirtualLink {
         return Objects.hash(label);
     }
 
-    public void setRandomValues(Random random, int maxBandwidthDemand) {
+    public void setRandomValues(Random random, int maxBandwidthDemand, int maxLatencyDemand) {
         setRequiredResourceValue(ResourceType.Bandwidth, Math.abs(random.nextInt()) % maxBandwidthDemand + 1);
+        setRequiredResourceValue(ResourceType.Latency, Math.abs(random.nextInt()) % maxLatencyDemand + 1);
     }
 }

@@ -1,8 +1,14 @@
-package com.bcom.nsplacer.placement;
+package com.bcom.nsplacer.placement.evaluation;
 
 import com.bcom.nsplacer.misc.FileUtils;
 import com.bcom.nsplacer.misc.SimpleCounter;
 import com.bcom.nsplacer.misc.StreamUtils;
+import com.bcom.nsplacer.placement.*;
+import com.bcom.nsplacer.placement.enums.ObjectiveType;
+import com.bcom.nsplacer.placement.enums.PlacerType;
+import com.bcom.nsplacer.placement.enums.ResourceType;
+import com.bcom.nsplacer.placement.enums.SearchStrategy;
+import com.bcom.nsplacer.placement.routing.HopCountRoutingAlgorithm;
 
 import java.io.*;
 import java.util.*;
@@ -48,10 +54,10 @@ public class MLDataGenerator {
                 vnf.setRandomValues(random, maxCpuDemand, maxStorageDemand);
             }
             for (VirtualLink vl : serviceGraph.getVirtualLinks()) {
-                vl.setRandomValues(random, maxBandwidthDemand);
+                vl.setRandomValues(random, maxBandwidthDemand, 1000);
             }
-            Placer placer = new Placer(networkGraph, serviceGraph, true, PlacerType.FirstFound, RoutingType.HopCount,
-                    PlacerStrategy.EIFF, placementTimeout, new PlacerTerminationAction() {
+            Placer placer = new Placer(networkGraph, serviceGraph, true, false, false, PlacerType.FirstFound, ObjectiveType.Bandwidth,
+                    new HopCountRoutingAlgorithm(), SearchStrategy.EIFF, placementTimeout, new PlacerTerminationAction() {
                 @Override
                 public void perform(Placer placer) {
                     if (placer.hasFoundPlacement()) {
@@ -150,7 +156,7 @@ public class MLDataGenerator {
 
         // Wait until executor service shuts down
         executorService.shutdown();
-        executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
+        executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
 
         // Aggregating data files
         FileOutputStream pytorchCsvStream = new FileOutputStream(new File(pytorchFilename));
@@ -169,8 +175,9 @@ public class MLDataGenerator {
     }
 
     public static void generateData() throws Exception {
-        NetworkGraph networkGraph = ImportExportManager.importFromXML(
-                StreamUtils.readString(new File("./samples of network graphs/zoo-topologies/BtEurope.graphml.xml")), 1000, 1000, 1000);
+        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(null,
+                StreamUtils.readString(new File("./samples of network graphs/zoo-topologies/BtEurope.graphml.xml")),
+                1000, 1000, 1000, false, 1000, 1);
 
         // Parameters
         int maxCpuDemand = 1000;

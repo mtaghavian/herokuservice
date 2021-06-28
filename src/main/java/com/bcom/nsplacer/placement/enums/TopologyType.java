@@ -1,4 +1,4 @@
-package com.bcom.nsplacer.placement;
+package com.bcom.nsplacer.placement.enums;
 
 public enum TopologyType {
     DaisyChain,

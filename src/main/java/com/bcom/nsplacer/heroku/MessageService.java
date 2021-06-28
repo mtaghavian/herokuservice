@@ -1,6 +1,6 @@
-package com.bcom.nsplacer.service;
+package com.bcom.nsplacer.heroku;
 
-import com.bcom.nsplacer.dao.MessageDao;
+import com.bcom.nsplacer.service.BaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

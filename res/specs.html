@@ -20,64 +20,44 @@
 <body>
 <div class="HeaderHeight" style="width: 100%; background-color: #ffdfdf; position: fixed;top: 0px;z-index: 1;">
     <div class="CenteredItems" style="display: inline-flex; flex-direction: row-reverse;">
+        <div class="HeaderHeight" style="text-align: center;flex: auto;">
+            <img src="favicon.png" style="width:20px; height: 20px;" alt=""/>
+            &nbsp&nbsp Specs
+        </div>
+        <div class="HeaderHeight" id="Return" style="text-align: center;flex: 0 0 50px;">
+            &nbsp <img src="left-arrow.svg" style="width:20px; height: 20px;" alt=""/>
+            &nbsp
+        </div>
     </div>
 </div>
+
 <br/>
-<form class="uk-form-stacked">
-    <div id="ChangePageSpinner" uk-spinner="ratio: 2" class="CenteredItems" style="text-align: center; padding-top: 50px;"></div>
-</form>
+<textarea id="textarea" class="uk-textarea CenteredItems" rows="27" style="text-align: left;font-size: 80%; border-width: 0;" placeholder="Textarea"></textarea>
+
 <script src="script.js"></script>
 <script>
-
-    var parameters = {};
-    var page = null;
 
     $.ajaxSetup({
         contentType: "application/json; charset=utf-8"
     });
 
-    function onerror(data) {
-        var text = HTTP_STATUS_CODES[data.status];
-        UIkit.notification({message: text, status: 'warning', pos: 'bottom-center', timeout: 1000})
-    }
+    $("#Return").click(function () {
+        load("/index.html");
+    });
 
-    function stop() {
+    function reload(){
         $.ajax({
-            url: "/api/eval/stop",
+            url: "/api/general/specs",
             type: "GET",
             error: function (data, status) {
                 onerror(data);
             },
             success: function (data, status) {
+                $("#textarea").val(data);
             }
         });
     }
-
-    function loadPage(addr) {
-        $("#ChangePageSpinner").show();
-        if(page !== null) {
-            $(page).fadeOut(fadeDelay, function() {
-                $(this).remove();
-            });
-        }
-        page = document.createElement("iframe");
-        page.onload = function() {
-            $(page).fadeIn(fadeDelay, function () {
-                $("#ChangePageSpinner").hide();
-            });
-        };
-        page.setAttribute("src", addr);
-        page.style.width = "100%";
-        page.style.height = "100%";
-        page.style.backgroundColor = "#ffdfdf";
-        page.style.position = "fixed";
-        page.style.top = "0px";
-        page.style.zIndex = "1";
-        page.style.display = "NONE";
-        document.body.appendChild(page);
-    }
-
-    loadPage("/evaluations.html");
+    reload();
 
 </script>
 </body>

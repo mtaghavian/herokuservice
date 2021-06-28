@@ -53,7 +53,7 @@
             <td id="NetworkTopology"></td>
         </tr>
         <tr>
-            <td>Bandwidth Demand</td>
+            <td>BW Demand</td>
             <td id="bandwidth"></td>
         </tr>
         <tr>
@@ -61,7 +61,7 @@
             <td id="topology"></td>
         </tr>
         <tr>
-            <td>Timeout</td>
+            <td>Timeout (ms)</td>
             <td id="Timeout"></td>
         </tr>
         <tr>
@@ -73,24 +73,24 @@
             <td id="size"></td>
         </tr>
         <tr>
-            <td style="font-weight: bold;">Number of Placements</td>
+            <td style="font-weight: bold;"># of Placements</td>
             <td style="font-weight: bold;" id="placements"></td>
         </tr>
         <tr>
-            <td>Q0, Q1, Q2, Q3, Q4 Times</td>
+            <td>Quartile Times (ms)</td>
             <td id="qs"></td>
         </tr>
         <tr>
-            <td>Average Time</td>
+            <td>Average Time (ms)</td>
             <td id="avg"></td>
         </tr>
         <tr>
-            <td>Remained Bandwidth (%)</td>
-            <td id="rbandwidth"></td>
+            <td>Remained BW (%)</td>
+            <td id="bwRemaining"></td>
         </tr>
         <tr>
-            <td>Used Bandwidth / Service (%)</td>
-            <td id="ubandwidth"></td>
+            <td>Used BW / Service (%)</td>
+            <td id="bwUsedPerService"></td>
         </tr>
         </tbody>
     </table>
@@ -110,46 +110,43 @@
 
     $("#Return").click(function () {
         clearInterval(myInterval);
-        window.parent.loadPage("/evaluations.html");
+        load("/evaluations.html");
         window.parent.stop();
     });
 
     $("#MoreDetails").click(function () {
-        window.parent.loadPage("/details.html");
+        load("/details.html");
     });
 
     $("#StopButton").click(function () {
         window.parent.stop();
     });
 
-    function reload(){
+    function reload() {
         $.ajax({
             url: "/api/eval/status",
             type: "GET",
             error: function (data, status) {
-                console.log("Function: error");
+                onerror(data);
             },
             success: function (data, status) {
-                var split = data.split("\n");
-                if(split[0] === "NotFinished") {
-                    $("#SpinnerInfo").html(split[1]+" placements found!");
+                if(data.running){
+                    $("#SpinnerInfo").html(data.counter + " placements found!");
                 } else {
                     $("#WaitPanel").hide();
                     $("#DonePanel").fadeIn(fadeDelay);
 
                     $("#NetworkTopology").html(window.parent.parameters.networkTopology);
                     $("#Timeout").html(window.parent.parameters.timeout);
-
-                    var i = 1;
-                    $("#bandwidth").html(split[i++]);
-                    $("#topology").html(split[i++]);
-                    $("#strategy").html(split[i++]);
-                    $("#size").html(split[i++]);
-                    $("#placements").html(split[i++]);
-                    $("#qs").html(""+split[i++]+", "+split[i++]+", "+split[i++]+", "+split[i++]+", "+split[i++]);
-                    $("#avg").html(split[i++]);
-                    $("#rbandwidth").html(split[i++]);
-                    $("#ubandwidth").html(split[i++]);
+                    $("#bandwidth").html(window.parent.parameters.bandwidth);
+                    $("#topology").html(window.parent.parameters.serviceTopology);
+                    $("#strategy").html(window.parent.parameters.strategy);
+                    $("#size").html(window.parent.parameters.serviceSize);
+                    $("#placements").html(data.counter);
+                    $("#qs").html(""+data.q0Time+", "+data.q1Time+", "+data.q2Time+", "+data.q3Time+", "+data.q4Time);
+                    $("#avg").html(data.avgTime);
+                    $("#bwRemaining").html(data.bwRemaining);
+                    $("#bwUsedPerService").html(data.bwUsedPerService);
                     clearInterval(myInterval);
                 }
             }

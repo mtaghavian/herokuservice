@@ -132,9 +132,7 @@ public class StreamUtils {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < b.length; i++) {
             String h = String.format("%h", b[i] & 0xff);
-            if (h.length() == 1) {
-                h = "0" + h;
-            }
+            h = (h.length() == 1) ? "0" + h : h;
             sb.append((i == 0) ? h : (delimeter + h));
         }
         return sb.toString();

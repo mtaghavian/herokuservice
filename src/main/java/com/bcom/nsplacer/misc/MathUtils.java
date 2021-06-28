@@ -12,7 +12,6 @@ public class MathUtils {
             arr.add(values.get(i));
         }
         Collections.sort(arr);
-
         List<E> list = new ArrayList<>();
         if (!values.isEmpty()) {
             list.add(arr.get(0));
@@ -24,11 +23,24 @@ public class MathUtils {
         return list;
     }
 
-    public static <E> double average(List<E> values) {
+    public static <E> double genericAverage(List<E> values) {
         double sum = 0;
         for (int i = 0; i < values.size(); i++) {
             sum += Double.parseDouble("" + values.get(i));
         }
         return sum / values.size();
     }
+
+    public static double average(List<Double> values) {
+        return sum(values) / values.size();
+    }
+
+    public static double sum(List<Double> values) {
+        double sum = 0;
+        for (int i = 0; i < values.size(); i++) {
+            sum += values.get(i);
+        }
+        return sum;
+    }
+
 }

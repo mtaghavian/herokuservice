@@ -1,5 +1,6 @@
 package com.bcom.nsplacer.placement;
 
+import com.bcom.nsplacer.placement.enums.ResourceType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -23,8 +24,10 @@ public class NetworkLink implements Comparable<NetworkLink> {
     public NetworkLink() {
         maximumResources = new LinkedList<>();
         maximumResources.add(new Resource(ResourceType.Bandwidth, 1000));
+        maximumResources.add(new Resource(ResourceType.Latency, 1000));
         remainingResources = new LinkedList<>();
         remainingResources.add(new Resource(ResourceType.Bandwidth, getMaximumResourceValue(ResourceType.Bandwidth)));
+        remainingResources.add(new Resource(ResourceType.Latency, getMaximumResourceValue(ResourceType.Latency)));
         label = "unknown";
     }
 
@@ -76,15 +79,6 @@ public class NetworkLink implements Comparable<NetworkLink> {
             l.setMaximumResourceValue(r.getType(), getMaximumResourceValue(r.getType()));
         }
         return l;
-    }
-
-    public boolean canAccommodate(VirtualLink vl) {
-        for (Resource r : remainingResources) {
-            if (getRemainingResourceValue(r.getType()) < vl.getRequiredResourceValue(r.getType())) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public void setRandomValues(Random random) {

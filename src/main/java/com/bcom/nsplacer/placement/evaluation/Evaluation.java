@@ -1,7 +1,11 @@
-package com.bcom.nsplacer.placement;
+package com.bcom.nsplacer.placement.evaluation;
 
 import com.bcom.nsplacer.misc.MathUtils;
 import com.bcom.nsplacer.misc.StreamUtils;
+import com.bcom.nsplacer.placement.*;
+import com.bcom.nsplacer.placement.enums.*;
+import com.bcom.nsplacer.placement.routing.HopCountRoutingAlgorithm;
+import com.bcom.nsplacer.placement.routing.IDSRoutingAlgorithm;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -10,65 +14,80 @@ import java.util.*;
 
 public class Evaluation {
 
-    public static int timeout = 2000;
-    public static int maxCpuDemand = 1;
-    public static int maxStorageDemand = 1;
-    public static int maxBandwidthAvailable = 10;
-    public static int nodeCpuAndStorageMaxResources = 1000000;
+    public static int timeout = 8000;
+    public static int cpuDemand = 1;
+    public static int storageDemand = 1;
+    public static int bandwidthDemand = 1;
+    public static int bandwidthAvailable = 10;
+    public static int cpuAndStorageAvailable = 1000000;
+    public static int latencyRange = 1, latencyOffset = 1, latencyDemand = 100;
 
     public static void singleTest() throws Exception {
+        //String SNTopology = "./samples of network graphs/zoo-topologies/BtNorthAmerica.graphml.xml";
         String SNTopology = "./samples of network graphs/zoo-topologies/BtEurope.graphml.xml";
-        NetworkGraph networkGraph = ImportExportManager.importFromXML(StreamUtils.readString(new File(SNTopology)), nodeCpuAndStorageMaxResources, nodeCpuAndStorageMaxResources, maxBandwidthAvailable);
+        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(null, StreamUtils.readString(new File(SNTopology)), cpuAndStorageAvailable, cpuAndStorageAvailable, bandwidthAvailable, false, latencyRange, latencyOffset);
 
-        Placer placer = new Placer(networkGraph, null, true, PlacerType.FirstFound, RoutingType.HopCount,
-                PlacerStrategy.DBO, timeout, new PlacerTerminationAction() {
+        IDSRoutingAlgorithm idsRoutingAlgorithm = new IDSRoutingAlgorithm(networkGraph);
+        Placer placer = new Placer(networkGraph, null, true, false, false, PlacerType.FirstFound, ObjectiveType.Bandwidth,
+                //new HopCountRoutingAlgorithm(),
+                idsRoutingAlgorithm,
+                SearchStrategy.ABO, timeout, new PlacerTerminationAction() {
             @Override
             public void perform(Placer placer) {
             }
         });
 
         int cnt = 0;
-        List<Long> times = new ArrayList<>();
         Random random = null;
         ServiceGraph serviceGraph = new ServiceGraph();
+        long totalTime = 0, totalLatency = 0;
         while (true) {
-            serviceGraph.create(random, TopologyType.Star, 6, maxCpuDemand, maxStorageDemand, 10);
+            serviceGraph.create(random, TopologyType.DaisyChain, 8, cpuDemand, storageDemand, bandwidthDemand, latencyDemand);
             placer.setServiceGraph(serviceGraph);
             placer.run();
             if (placer.hasFoundPlacement()) {
+                int latency = placer.getBestFoundState().calcPlacedLatency();
+                System.out.println("Latency: " + latency);
+                totalLatency += latency;
+
+                totalTime += placer.getExecutionTime();
                 placer.applyNetworkStateFromBestFoundPlacement();
+
+                double totalRemainingBandwidth = placer.getNetworkGraph().getTotalRemainingResourceValue(false, ResourceType.Bandwidth);
+                System.out.println("totalRemainingBandwidth: " + totalRemainingBandwidth);
+
                 cnt++;
-                times.add(placer.getExecutionTime());
+                System.out.println("# of placed services: " + cnt);
             } else {
                 break;
             }
         }
-        System.out.println(cnt);
-        System.out.println();
+        System.out.println("Total time: " + totalTime);
+        System.out.println("Average latency: " + (int) ((double) totalLatency / cnt));
     }
 
     public static void evaluation() throws Exception {
-
-        for (String SNTopology : Arrays.asList("./samples of network graphs/zoo-topologies/BtEurope.graphml.xml",
+        for (String SNTopology : Arrays.asList(
+                "./samples of network graphs/zoo-topologies/BtEurope.graphml.xml",
                 "./samples of network graphs/zoo-topologies/BtAsiaPac.graphml.xml",
-                "./samples of network graphs/zoo-topologies/BtNorthAmerica.graphml.xml")) {
-
+                "./samples of network graphs/zoo-topologies/BtNorthAmerica.graphml.xml"
+        )) {
             PlacerType placerType = PlacerType.FirstFound;
             System.out.println(SNTopology);
-            NetworkGraph networkGraph = ImportExportManager.importFromXML(StreamUtils.readString(new File(SNTopology)), nodeCpuAndStorageMaxResources, nodeCpuAndStorageMaxResources, maxBandwidthAvailable);
+            NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(null, StreamUtils.readString(new File(SNTopology)), cpuAndStorageAvailable, cpuAndStorageAvailable, bandwidthAvailable, false, latencyRange, 1);
             System.out.println("Demand\tServiceTopology\tMethod\tServiceSize\t#PlacedServices\tQ0\tQ1\tQ2\tQ3\tQ4\tAverage\tFinalRemainedBandwidthPercent\tAverageUsedBandwidthPercent");
-            for (int maxBandwidthDemand = 1; maxBandwidthDemand <= maxBandwidthAvailable; maxBandwidthDemand++) {
+            for (int maxBandwidthDemand = 1; maxBandwidthDemand <= bandwidthAvailable; maxBandwidthDemand++) {
                 for (TopologyType topologyType : Arrays.asList(TopologyType.DaisyChain, TopologyType.Ring, TopologyType.Star)) {
-                    for (PlacerStrategy strategy : Arrays.asList(PlacerStrategy.ADBO, PlacerStrategy.ABO, PlacerStrategy.DBO, PlacerStrategy.EIFF, PlacerStrategy.EDFF)) {
+                    for (SearchStrategy strategy : Arrays.asList(SearchStrategy.VOTE, SearchStrategy.ABO, SearchStrategy.DBO, SearchStrategy.EIFF, SearchStrategy.EDFF)) {
                         for (int serviceSize = 3; serviceSize <= 8; serviceSize++) {
-                            Placer placer = new Placer(networkGraph, null, true, placerType, RoutingType.HopCount, strategy, timeout, null);
+                            Placer placer = new Placer(networkGraph, null, true, false, false, placerType, ObjectiveType.Bandwidth, new HopCountRoutingAlgorithm(), strategy, timeout, null);
 
                             int cnt = 0;
                             List<Long> times = new ArrayList<>();
                             Random random = null;
                             ServiceGraph serviceGraph = new ServiceGraph();
                             while (true) {
-                                serviceGraph.create(random, topologyType, serviceSize, maxCpuDemand, maxStorageDemand, maxBandwidthDemand);
+                                serviceGraph.create(random, topologyType, serviceSize, cpuDemand, storageDemand, maxBandwidthDemand, 1000);
                                 placer.setServiceGraph(serviceGraph);
                                 placer.run();
                                 if (placer.hasFoundPlacement()) {
@@ -96,7 +115,7 @@ public class Evaluation {
                                             + "\t" + quartiles.get(2)
                                             + "\t" + quartiles.get(3)
                                             + "\t" + quartiles.get(4)
-                                            + "\t" + (int) MathUtils.average(times)
+                                            + "\t" + (int) MathUtils.genericAverage(times)
                                             + "\t" + String.format(precision, percentRemaining)
                                             + "\t" + String.format(precision, usedResourcePerServicePercent)
                                     );
@@ -111,26 +130,27 @@ public class Evaluation {
     }
 
     public static void main(String[] args) throws Exception {
-        evaluation();
+        singleTest();
+        //evaluation();
         //compareTheResults();
     }
 
     public static void compareTheResults() throws Exception {
 
-        String files[] = new String[] {
-            //"C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTEUROPE-RECURSION.xlsx"//,
-            "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTEUROPE3.xlsx",
-            "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTASIA3.xlsx",
-            "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTAMERICA3.xlsx"
+        String files[] = new String[]{
+                //"C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTEUROPE-RECURSION.xlsx"//,
+                "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTEUROPE3.xlsx",
+                "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTASIA3.xlsx",
+                "C:\\Users\\mtaghavian\\Desktop\\Paper-globecom2021\\Evaluations\\BTAMERICA3.xlsx"
         };
 
         File vbsFile = new File("XlsToCsv.vbs");
         Map<String, List<Double>> map = new HashMap<>();
-        map.put("ADBO", new ArrayList<>());
-        map.put("ABO", new ArrayList<>());
-        map.put("DBO", new ArrayList<>());
-        map.put("EDFF", new ArrayList<>());
-        map.put("EIFF", new ArrayList<>());
+        map.put("" + SearchStrategy.VOTE, new ArrayList<>());
+        map.put("" + SearchStrategy.ABO, new ArrayList<>());
+        map.put("" + SearchStrategy.DBO, new ArrayList<>());
+        map.put("" + SearchStrategy.EDFF, new ArrayList<>());
+        map.put("" + SearchStrategy.EIFF, new ArrayList<>());
 
         for (int i = 0; i < files.length; i++) {
             File file = new File(files[i]);
@@ -142,7 +162,7 @@ public class Evaluation {
             compareHelper(tempFile.getName(), tempFile, map);
         }
 
-        for (String strategy : Arrays.asList("ADBO", "ABO", "DBO", "EDFF", "EIFF")) {
+        for (String strategy : Arrays.asList("" + SearchStrategy.VOTE, "" + SearchStrategy.ABO, "" + SearchStrategy.DBO, "" + SearchStrategy.EDFF, "" + SearchStrategy.EIFF)) {
             System.out.println("Strategy: " + strategy);
             Collections.sort(map.get(strategy));
             List<Double> quartile = MathUtils.quartile(map.get(strategy));
@@ -175,7 +195,7 @@ public class Evaluation {
             double averageUsedBandwidth = Double.parseDouble(split[9]);
             //double averageTime = Double.parseDouble(split[10]);
             if (mode.equals("placedServiceCount")) {
-                if (strategy.equals("ADBO")) {
+                if (strategy.equals("" + SearchStrategy.VOTE)) {
                     echele[serviceSize - 3] = placedServiceCount;
                 } else {
                     double r = echele[serviceSize - 3] / (placedServiceCount == 0.0 ? 1.0 : placedServiceCount);

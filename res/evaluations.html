@@ -40,9 +40,9 @@
     <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Substrate Network</span></h1>
 
     <div class="uk-margin CenteredItems">
-        <label class="uk-form-label" for="SNTopology">Topology</label>
+        <label class="uk-form-label" for="networkTopology">Topology</label>
         <div class="uk-form-controls">
-            <select class="uk-select" id="SNTopology" onchange="SNChange()">
+            <select class="uk-select" id="networkTopology" onchange="SNChange()">
             </select>
         </div>
     </div>
@@ -50,88 +50,96 @@
     <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Service Graph</span></h1>
 
     <div class="uk-margin CenteredItems">
-        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="SGTopology">Topology</label>
-        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="SGSize" style="display: inline-block;">Size</label>
+        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="serviceTopology">Topology</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="serviceSize" style="display: inline-block;">Size</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="bandwidth" style="display: inline-block;">BW Demand</label>
         <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
-            <select class="uk-select" id="SGTopology">
+            <select class="uk-select" id="serviceTopology">
             </select>
         </div>
         <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
-            <select class="uk-select" id="SGSize">
-            </select>
-        </div>
-    </div>
-    <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Placer</span></h1>
-    <div class="uk-margin CenteredItems" style="display: block;">
-        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="Timeout">Timout</label>
-        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="Bandwidth" style="display: inline-block;">Bandwidth Demand</label>
-        <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
-            <select class="uk-select" id="Timeout">
+            <select class="uk-select" id="serviceSize">
             </select>
         </div>
         <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
-            <select class="uk-select" id="Bandwidth">
-            </select>
-        </div>
-    </div>
-    <div class="uk-margin CenteredItems">
-        <label class="uk-form-label" for="Strategy">Strategy</label>
-        <div class="uk-form-controls">
-            <select class="uk-select" id="Strategy">
+            <select class="uk-select" id="bandwidth">
             </select>
         </div>
     </div>
 
+    <h1 class="uk-heading-small uk-heading-line uk-text-center CenteredItems" style="font-size: 20px"><span>Placer</span></h1>
+    <div class="uk-margin CenteredItems" style="display: block;">
+        <label class="uk-form-label TwoColumnWidth" style="display: inline-block;" for="timeout">Timout (ms)</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="routing" style="display: inline-block;">Routing</label>
+        <label class="uk-form-label TwoColumnWidth TwoColumnPaddingLeft" for="strategy" style="display: inline-block;">Strategy</label>
+        <div class="uk-form-controls TwoColumnWidth" style="display: inline-block;">
+            <select class="uk-select" id="timeout">
+            </select>
+        </div>
+        <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
+            <select class="uk-select" id="routing">
+            </select>
+        </div>
+        <div class="uk-form-controls TwoColumnWidth TwoColumnPaddingLeft" style="display: inline-block;">
+            <select class="uk-select" id="strategy">
+            </select>
+        </div>
+    </div>
+
+    <br/>
     <button type="button" class="uk-button uk-button-primary CenteredItems" id="Place">Place</button>
 </form>
 <script src="script.js"></script>
 <script>
-    var uploadSNFileMessage = "Upload an arbitrary zoo topology file";
+    var uploadSNFileMessage = "Upload an arbitrary zoo topology file...";
 
     function initialFields() {
-        $("#SNTopology").append(createOption(""));
-        $("#SNTopology").append(createOption(uploadSNFileMessage));
+        $("#networkTopology").append(createOption(""));
+        $("#networkTopology").append(createOption(uploadSNFileMessage));
 
-        $("#SGTopology").append(createOption("DaisyChain"));
-        $("#SGTopology").append(createOption("Ring"));
-        $("#SGTopology").append(createOption("Star"));
+        $("#serviceTopology").append(createOption("DaisyChain"));
+        $("#serviceTopology").append(createOption("Ring"));
+        $("#serviceTopology").append(createOption("Star"));
 
-        $("#SGSize").append(createOption("3"));
-        $("#SGSize").append(createOption("4"));
-        $("#SGSize").append(createOption("5"));
-        $("#SGSize").append(createOption("6"));
-        $("#SGSize").append(createOption("7"));
-        $("#SGSize").append(createOption("8"));
+        $("#serviceSize").append(createOption("3"));
+        $("#serviceSize").append(createOption("4"));
+        $("#serviceSize").append(createOption("5"));
+        $("#serviceSize").append(createOption("6"));
+        $("#serviceSize").append(createOption("7"));
+        $("#serviceSize").append(createOption("8"));
 
-        $("#Timeout").append(createOption("2000"));
-        $("#Timeout").append(createOption("4000"));
-        $("#Timeout").append(createOption("8000"));
-        $("#Timeout").append(createOption("16000"));
+        $("#timeout").append(createOption("2000"));
+        $("#timeout").append(createOption("4000"));
+        $("#timeout").append(createOption("8000"));
+        $("#timeout").append(createOption("16000"));
 
-        $("#Bandwidth").append(createOption("1"));
-        $("#Bandwidth").append(createOption("2"));
-        $("#Bandwidth").append(createOption("3"));
-        $("#Bandwidth").append(createOption("4"));
-        $("#Bandwidth").append(createOption("5"));
-        $("#Bandwidth").append(createOption("6"));
-        $("#Bandwidth").append(createOption("7"));
-        $("#Bandwidth").append(createOption("8"));
-        $("#Bandwidth").append(createOption("9"));
-        $("#Bandwidth").append(createOption("10"));
+        $("#bandwidth").append(createOption("1"));
+        $("#bandwidth").append(createOption("2"));
+        $("#bandwidth").append(createOption("3"));
+        $("#bandwidth").append(createOption("4"));
+        $("#bandwidth").append(createOption("5"));
+        $("#bandwidth").append(createOption("6"));
+        $("#bandwidth").append(createOption("7"));
+        $("#bandwidth").append(createOption("8"));
+        $("#bandwidth").append(createOption("9"));
+        $("#bandwidth").append(createOption("10"));
 
-        $("#Strategy").append(createOption("ADBO"));
-        $("#Strategy").append(createOption("ABO"));
-        $("#Strategy").append(createOption("DBO"));
-        $("#Strategy").append(createOption("EDFF"));
-        $("#Strategy").append(createOption("EIFF"));
-        $("#Strategy").append(createOption("DFF"));
-        $("#Strategy").append(createOption("IFF"));
+        $("#routing").append(createOption("HopCount"));
+        $("#routing").append(createOption("IDS"));
+
+        $("#strategy").append(createOption("VOTE"));
+        $("#strategy").append(createOption("ABO"));
+        $("#strategy").append(createOption("DBO"));
+        $("#strategy").append(createOption("EDFF"));
+        $("#strategy").append(createOption("EIFF"));
+        $("#strategy").append(createOption("DFF"));
+        $("#strategy").append(createOption("IFF"));
     }
 
     function SNChange() {
-        var x = document.getElementById("SNTopology").value;
+        var x = document.getElementById("networkTopology").value;
         if(x === uploadSNFileMessage) {
-            window.parent.loadPage("/files.html");
+            load("/files.html");
         }
     }
 
@@ -158,12 +166,13 @@
     var place = function () {
         $("#Place").prop('disabled', true);
         window.parent.parameters = {
-            networkTopology: $("#SNTopology").val(),
-            serviceTopology: $("#SGTopology").val(),
-            serviceSize: $("#SGSize").val(),
-            timeout: $("#Timeout").val(),
-            bandwidth: $("#Bandwidth").val(),
-            strategy: $("#Strategy").val()
+            networkTopology: $("#networkTopology").val(),
+            serviceTopology: $("#serviceTopology").val(),
+            serviceSize: $("#serviceSize").val(),
+            timeout: $("#timeout").val(),
+            bandwidth: $("#bandwidth").val(),
+            strategy: $("#strategy").val(),
+            routing: $("#routing").val(),
         };
         $.ajax({
             url: "/api/eval/start",
@@ -173,8 +182,7 @@
                 onerror(data);
             },
             success: function (data, status) {
-                console.log("Function: success");
-                window.parent.loadPage("/results.html");
+                load("/results.html");
             },
             data: JSON.stringify(window.parent.parameters)
         });
@@ -194,30 +202,31 @@
                 if(data.length === 0){
                     return;
                 }
-                $("#SNTopology").empty();
+                $("#networkTopology").empty();
                 var option;
 
                 for (var key in data) {
                     option = document.createElement('option');
                     option.innerHTML = data[key].name;
-                    $("#SNTopology").append(option);
+                    $("#networkTopology").append(option);
                 }
                 option = document.createElement('option');
                 option.innerHTML = uploadSNFileMessage;
-                $("#SNTopology").append(option);
+                $("#networkTopology").append(option);
 
                 if(window.parent.parameters.hasOwnProperty('networkTopology')) {
-                    $("#SNTopology").val(window.parent.parameters.networkTopology);
+                    $("#networkTopology").val(window.parent.parameters.networkTopology);
                 }
             }
         });
 
         if(window.parent.parameters.hasOwnProperty('networkTopology')) {
-            $("#SGTopology").val(window.parent.parameters.serviceTopology);
-            $("#SGSize").val(window.parent.parameters.serviceSize);
-            $("#Timeout").val(window.parent.parameters.timeout);
-            $("#Bandwidth").val(window.parent.parameters.bandwidth);
-            $("#Strategy").val(window.parent.parameters.strategy);
+            $("#serviceTopology").val(window.parent.parameters.serviceTopology);
+            $("#serviceSize").val(window.parent.parameters.serviceSize);
+            $("#timeout").val(window.parent.parameters.timeout);
+            $("#bandwidth").val(window.parent.parameters.bandwidth);
+            $("#strategy").val(window.parent.parameters.strategy);
+            $("#routing").val(window.parent.parameters.routing);
         }
     }
 

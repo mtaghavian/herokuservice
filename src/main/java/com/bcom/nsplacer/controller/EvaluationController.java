@@ -3,7 +3,15 @@ package com.bcom.nsplacer.controller;
 import com.bcom.nsplacer.misc.MathUtils;
 import com.bcom.nsplacer.misc.StreamUtils;
 import com.bcom.nsplacer.model.FileEntry;
-import com.bcom.nsplacer.placement.*;
+import com.bcom.nsplacer.model.dto.EvaluationParams;
+import com.bcom.nsplacer.model.dto.EvaluationResults;
+import com.bcom.nsplacer.placement.NetworkGraph;
+import com.bcom.nsplacer.placement.Placer;
+import com.bcom.nsplacer.placement.ServiceGraph;
+import com.bcom.nsplacer.placement.ZooTopologyImportExportManager;
+import com.bcom.nsplacer.placement.enums.*;
+import com.bcom.nsplacer.placement.routing.HopCountRoutingAlgorithm;
+import com.bcom.nsplacer.placement.routing.IDSRoutingAlgorithm;
 import com.bcom.nsplacer.service.FileEntryService;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,32 +48,24 @@ public class EvaluationController {
     }
 
     @PostMapping("/start")
-    public String start(HttpServletRequest request, HttpServletResponse response, @RequestBody Map<String, String> params) throws IOException {
+    public String start(HttpServletRequest request, HttpServletResponse response, @RequestBody EvaluationParams params) throws IOException {
         final SessionParams sessionParams = getSessionParams(request);
         sessionParams.params = params;
-        sessionParams.status = null;
-        sessionParams.counter = 0;
-        String networkTopology = params.get("networkTopology");
-        String strategy = params.get("strategy");
-        String timeout = params.get("timeout");
+        sessionParams.getResults().setCounter(0);
+        String networkTopology = params.getNetworkTopology();
         List<FileEntry> fileEntry = fileEntryService.findByName(networkTopology);
-        NetworkGraph networkGraph = ImportExportManager.importFromXML(StreamUtils.readString(fileEntryService.getInputStream(fileEntry.get(0).getId())),
-                nodeCpuAndStorageMaxResources, nodeCpuAndStorageMaxResources, maxBandwidthAvailable);
-        sessionParams.placer = new Placer(networkGraph, null, true, PlacerType.FirstFound,
-                RoutingType.HopCount, PlacerStrategy.valueOf(strategy),
-                Integer.parseInt(timeout), null);
+        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(null, StreamUtils.readString(fileEntryService.getInputStream(fileEntry.get(0).getId())),
+                nodeCpuAndStorageMaxResources, nodeCpuAndStorageMaxResources, maxBandwidthAvailable, false, 100, 1);
+        sessionParams.placer = new Placer(networkGraph, null, true, false, false, PlacerType.FirstFound, ObjectiveType.Bandwidth,
+                params.getRouting().equals(RoutingType.HopCount) ? new HopCountRoutingAlgorithm() : new IDSRoutingAlgorithm(networkGraph),
+                params.getStrategy(), params.getTimeout(), null);
         new Thread(new Evaluator(sessionParams)).start();
         return "ok";
     }
 
     @GetMapping("/status")
-    public String start(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        final SessionParams sessionParams = getSessionParams(request);
-        if (sessionParams.status == null) {
-            return "NotFinished\n" + sessionParams.counter;
-        } else {
-            return "Finished\n" + sessionParams.status;
-        }
+    public EvaluationResults start(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        return getSessionParams(request).getResults();
     }
 
     @GetMapping("/getDetails")
@@ -74,16 +74,10 @@ public class EvaluationController {
         return sessionParams.placementDetails;
     }
 
-    @GetMapping("/getParams")
-    public Map<String, String> getParams(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        final SessionParams sessionParams = getSessionParams(request);
-        return sessionParams.params;
-    }
-
     @GetMapping("/stop")
     public String stop(HttpServletRequest request, HttpServletResponse response) throws IOException {
         final SessionParams sessionParams = getSessionParams(request);
-        sessionParams.running = false;
+        sessionParams.getResults().setRunning(false);
         try {
             sessionParams.placer.stop();
         } catch (Exception ex) {
@@ -95,10 +89,9 @@ public class EvaluationController {
     @Setter
     public static class SessionParams {
         private Placer placer;
-        private String status = null, placementDetails = null;
-        private volatile int counter = 0;
-        private volatile boolean running = false;
-        private Map<String, String> params = new HashMap<>();
+        private String placementDetails = null;
+        private EvaluationResults results = new EvaluationResults();
+        private EvaluationParams params;
     }
 
     public static class Evaluator implements Runnable {
@@ -112,58 +105,49 @@ public class EvaluationController {
         @Override
         public void run() {
             try {
-                String serviceTopology = sessionParams.params.get("serviceTopology");
-                String bandwidth = sessionParams.params.get("bandwidth");
-                String serviceSize = sessionParams.params.get("serviceSize");
-                String strategy = sessionParams.params.get("strategy");
-                TopologyType topologyType = TopologyType.valueOf(serviceTopology);
-                int maxBandwidthDemand = Integer.parseInt(bandwidth);
-                sessionParams.running = true;
+                TopologyType topologyType = sessionParams.params.getServiceTopology();
+                int maxBandwidthDemand = sessionParams.params.getBandwidth();
+                sessionParams.getResults().setRunning(true);
                 List<Long> times = new ArrayList<>();
                 ServiceGraph serviceGraph = new ServiceGraph();
                 StringBuilder sb = new StringBuilder();
-                while (sessionParams.running) {
-                    serviceGraph.create(null, topologyType, Integer.parseInt(serviceSize), maxCpuDemand, maxStorageDemand, maxBandwidthDemand);
+                while (sessionParams.getResults().isRunning()) {
+                    serviceGraph.create(null, topologyType, sessionParams.params.getServiceSize(), maxCpuDemand, maxStorageDemand, maxBandwidthDemand, 1000);
                     sessionParams.placer.setServiceGraph(serviceGraph);
                     sessionParams.placer.run();
                     if (sessionParams.placer.hasFoundPlacement()) {
                         sessionParams.placer.applyNetworkStateFromBestFoundPlacement();
-                        sb.append("Placement #" + sessionParams.counter).append("\n");
+                        sb.append("Placement #" + sessionParams.getResults().getCounter()).append("\n");
                         sb.append("Nodes: " + sessionParams.placer.getBestFoundState().getPlacementNodeMap()).append("\n");
                         sb.append("Links: " + sessionParams.placer.getBestFoundState().getPlacementLinkMap()).append("\n");
                         sb.append("\n");
-                        sessionParams.counter++;
+                        sessionParams.getResults().incrementCounter();
                         times.add(sessionParams.placer.getExecutionTime());
                     } else {
                         sessionParams.placementDetails = sb.toString();
                         String precision = "%.2f";
                         double percentRemaining = ((double) sessionParams.placer.getNetworkGraph().getTotalRemainingResourceValue(false, ResourceType.Bandwidth) /
                                 sessionParams.placer.getNetworkGraph().getTotalMaximumResourceValue(false, ResourceType.Bandwidth) * 100.0);
-                        double usedResourcePerServicePercent = (100.0 - percentRemaining) / sessionParams.counter;
+                        double usedResourcePerServicePercent = (100.0 - percentRemaining) / sessionParams.getResults().getCounter();
                         List<Long> quartiles = MathUtils.quartile(times);
                         if (quartiles.isEmpty()) {
                             for (int i = 0; i < 5; i++) {
                                 quartiles.add(0l);
                             }
                         }
-                        sessionParams.status = maxBandwidthDemand
-                                + "\n" + topologyType
-                                + "\n" + strategy
-                                + "\n" + serviceSize
-                                + "\n" + sessionParams.counter
-                                + "\n" + quartiles.get(0)
-                                + "\n" + quartiles.get(1)
-                                + "\n" + quartiles.get(2)
-                                + "\n" + quartiles.get(3)
-                                + "\n" + quartiles.get(4)
-                                + "\n" + (int) MathUtils.average(times)
-                                + "\n" + String.format(precision, percentRemaining)
-                                + "\n" + String.format(precision, usedResourcePerServicePercent);
+                        sessionParams.getResults().setQ0Time(quartiles.get(0).intValue());
+                        sessionParams.getResults().setQ1Time(quartiles.get(1).intValue());
+                        sessionParams.getResults().setQ2Time(quartiles.get(2).intValue());
+                        sessionParams.getResults().setQ3Time(quartiles.get(3).intValue());
+                        sessionParams.getResults().setQ4Time(quartiles.get(4).intValue());
+                        sessionParams.getResults().setAvgTime((int) MathUtils.genericAverage(times));
+                        sessionParams.getResults().setBwRemaining(String.format(precision, percentRemaining));
+                        sessionParams.getResults().setBwUsedPerService(String.format(precision, usedResourcePerServicePercent));
                         break;
                     }
                 }
             } finally {
-                sessionParams.running = false;
+                sessionParams.getResults().setRunning(false);
             }
         }
     }

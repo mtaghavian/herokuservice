@@ -13,7 +13,7 @@ public class SimpleCounter {
 
     private int cnt = 0;
 
-    public void increment() {
+    public synchronized void increment() {
         cnt++;
     }
 }

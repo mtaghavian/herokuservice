@@ -1,16 +1,13 @@
-
+/* Scrollbar */
 ::-webkit-scrollbar {
     width: 7px;
 }
-/* Track */
 ::-webkit-scrollbar-track {
     background: rgb(245, 245, 245);
 }
-/* Handle */
 ::-webkit-scrollbar-thumb {
     background: rgb(190, 190, 190);
 }
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
     background: rgb(170, 170, 170);
 }
@@ -20,24 +17,16 @@ body {
     padding-top: 50px;
 }
 
-.FileUploadResponseFrame {
-    vertical-align: middle;
-    height: 25px;
-    width: 20px;
-    display: none;
-    border: none;
-}
-
 .HeaderHeight{
     height: 50px;
     line-height: 50px;
 }
 
 .TwoColumnWidth{
-    width: 47%;
+    width: 30%;
 }
 .TwoColumnPaddingLeft{
-    padding-left: 4%;
+    padding-left: 3%;
 }
 
 .FileEntryName {

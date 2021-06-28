@@ -1,7 +1,6 @@
-package com.bcom.nsplacer.controller;
+package com.bcom.nsplacer.heroku;
 
-import com.bcom.nsplacer.model.Message;
-import com.bcom.nsplacer.service.MessageService;
+import com.bcom.nsplacer.controller.BaseController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

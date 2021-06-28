@@ -1,5 +1,5 @@
-package com.bcom.nsplacer.model;
-
+package com.bcom.nsplacer.heroku;
+import com.bcom.nsplacer.model.BaseModel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

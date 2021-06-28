@@ -40,3 +40,11 @@ var HTTP_STATUS_CODES = {
 };
 
 var fadeDelay = 500;
+
+function load(addr) {
+    if(window.parent.loadPage) {
+        window.parent.loadPage(addr);
+    } else {
+        window.location.href = addr;
+    }
+}

@@ -1,5 +1,6 @@
 package com.bcom.nsplacer.placement;
 
+import com.bcom.nsplacer.placement.enums.ResourceType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

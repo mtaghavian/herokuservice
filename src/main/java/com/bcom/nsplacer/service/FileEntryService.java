@@ -49,6 +49,9 @@ public class FileEntryService extends BaseService<FileEntry> {
 
     @Override
     public void delete(UUID id) {
+        // The performance of this implementation of delete can be improved!
+        // Each find query fetches the record including its data
+        // Which is not necessary
         Optional<FileEntry> fileEntryOptional = fileEntryDao.findById(id);
         if (fileEntryOptional.isPresent()) {
             Optional<FileData> data = fileDataDao.findById(fileEntryOptional.get().getFileDataId());
@@ -132,7 +135,6 @@ public class FileEntryService extends BaseService<FileEntry> {
         public void write(int b) throws IOException {
             write(new byte[]{(byte) b}, 0, 1);
         }
-
 
         @Override
         public void write(byte[] b) throws IOException {
