@@ -12,14 +12,33 @@
     background: rgb(170, 170, 170);
 }
 
+@font-face {
+    font-family: BcomWeb-Light;
+    src: url("BcomWeb-Light.otf");
+}
+
+@font-face {
+    font-family: BcomWeb-SemiBold;
+    src: url("BcomWeb-SemiBold.otf");
+}
+
 body {
     padding-bottom: 20px;
     padding-top: 50px;
+    font-family: BcomWeb-Light;
 }
 
 .HeaderHeight{
     height: 50px;
     line-height: 50px;
+}
+.HeaderBackground{
+    background-color: #000000;
+}
+
+.HeaderIcon{
+    height: 30px;
+    padding-bottom: 5px;
 }
 
 .TwoColumnWidth{
@@ -78,3 +97,48 @@ CenteredItems {
     }
 }
 
+/*
+BCOM Colors and BCOM Bachground Colors
+ */
+.BCCBlue {
+    color: #00BEE6;
+}
+.BCBCBlue {
+    background-color: #00BEE6;
+}
+.BCCLightGray {
+    color: #8C8C8C;
+}
+.BCBCLightGray {
+    background-color: #8C8C8C;
+}
+.BCCDarkGray {
+    color: #505050;
+}
+.BCBCDarkGray {
+    background-color: #505050;
+}
+.BCCRed {
+    color: #FF5050;
+}
+.BCBCRed {
+    background-color: #FF5050;
+}
+.BCCGreen {
+    color: #00CD78;
+}
+.BCBCGreen {
+    background-color: #00CD78;
+}
+.BCCYellow {
+    color: #FFB400;
+}
+.BCBCYellow {
+    background-color: #FFB400;
+}
+.BCCPurple {
+    color: #AA64FF;
+}
+.BCBCPurple {
+    background-color: #AA64FF;
+}
