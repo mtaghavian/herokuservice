@@ -14,5 +14,5 @@ public abstract class RoutingAlgorithm {
     private int maxNumPaths = 1;
     private boolean considerLatency = false;
 
-    public abstract List<RoutingPath> route(SearchState state, String srcNode, String dstNode, VirtualLink vl);
+    public abstract List<RoutingPath> route(SearchState state, String srcNode, String dstNode, VirtualLink vl, long timeout);
 }

@@ -1,6 +1,7 @@
 package com.bcom.nsplacer.placement;
 
 import com.bcom.nsplacer.misc.CollectionUtils;
+import com.bcom.nsplacer.misc.GraphUtils;
 import com.bcom.nsplacer.placement.enums.ObjectiveType;
 import com.bcom.nsplacer.placement.enums.ResourceType;
 import com.bcom.nsplacer.placement.enums.SearchStrategy;
@@ -22,6 +23,7 @@ import java.util.*;
 @ToString
 public class SearchState implements Comparable<SearchState> {
 
+    public static final long routingTimeout = 2000;
     public static Random random = new Random(System.currentTimeMillis());
     private static DatagramSocket sock;
     private NetworkGraph networkGraph;
@@ -183,7 +185,7 @@ public class SearchState implements Comparable<SearchState> {
                         vlsNeedToBePlaced.add(vl);
                         String srcNode = child.getPlacedNodes().get(placedVNFMap.get(vl.getSrcVNF()));
                         String dstNode = child.getPlacedNodes().get(placedVNFMap.get(vl.getDstVNF()));
-                        List<RoutingPath> routingPaths = placer.getRoutingAlgorithm().route(child, srcNode, dstNode, vl);
+                        List<RoutingPath> routingPaths = placer.getRoutingAlgorithm().route(child, srcNode, dstNode, vl, routingTimeout);
                         candidatePaths.add(routingPaths);
 
                         // For performance reasons
@@ -235,7 +237,7 @@ public class SearchState implements Comparable<SearchState> {
                         child.getPlacedPaths().add(path);
                     }
                 } else {
-                    //System.out.println("Conflicts in routings!");
+                    System.out.println("Conflicts in routings!");
                     child.getPlacedVLs().add(vlsNeedToBePlaced.get(0));
                     child.getPlacedPaths().add(new RoutingPath());
                 }
@@ -297,22 +299,37 @@ public class SearchState implements Comparable<SearchState> {
 
     @Override
     public int compareTo(SearchState o) {
-        int c = objectiveValue.compareTo(o.getObjectiveValue());
+        int cmp = objectiveValue.compareTo(o.getObjectiveValue());
         if (SearchStrategy.ABO.equals(strategy)) {
-            if (c == 0) {
-                c = -depth.compareTo(o.depth);
-                if (c == 0) {
-                    return (o.calcPlacedLatency() - calcPlacedLatency()) * 1;
-                } else {
-                    return c;
-                }
-            } else {
-                return c;
+            if (cmp != 0) {
+                return cmp;
             }
+            cmp = -depth.compareTo(o.depth);
+            if (cmp != 0) {
+                return cmp;
+            }
+            cmp = -(GraphUtils.minimumRemainingBandwidth(networkGraph.getLinks()))
+                    .compareTo(GraphUtils.minimumRemainingBandwidth(o.getNetworkGraph().getLinks()));
+            if (cmp != 0) {
+                return cmp;
+            }
+//            cmp = -(GraphUtils.maximumRemainingBandwidth(networkGraph.getLinks()))
+//                    .compareTo(GraphUtils.maximumRemainingBandwidth(o.getNetworkGraph().getLinks()));
+//            if (cmp != 0) {
+//                return cmp;
+//            }
+//            cmp = -(GraphUtils.averageRemainingBandwidth(networkGraph.getLinks()))
+//                    .compareTo(GraphUtils.averageRemainingBandwidth(o.getNetworkGraph().getLinks()));
+//            if (cmp != 0) {
+//                return cmp;
+//            }
+            //System.out.println("hey: " + depth);
+            //return (o.calcPlacedLatency() - calcPlacedLatency()) * 1;
+            return 0;
         } else if (SearchStrategy.DBO.equals(strategy)) {
-            return -c;
+            return -cmp;
         } else {
-            return c;
+            return cmp;
         }
     }
 

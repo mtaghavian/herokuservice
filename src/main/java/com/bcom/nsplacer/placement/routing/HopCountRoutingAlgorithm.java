@@ -12,7 +12,7 @@ import java.util.*;
 public class HopCountRoutingAlgorithm extends RoutingAlgorithm {
 
     @Override
-    public List<RoutingPath> route(SearchState state, String srcNode, String dstNode, VirtualLink vl) {
+    public List<RoutingPath> route(SearchState state, String srcNode, String dstNode, VirtualLink vl, long timeout) {
         if (srcNode.equals(dstNode)) {
             for (NetworkLink link : state.getNetworkGraph().getLinks()) {
                 if ((link.getRemainingResourceValue(ResourceType.Bandwidth) >= vl.getRequiredResourceValue(ResourceType.Bandwidth))
@@ -25,12 +25,12 @@ public class HopCountRoutingAlgorithm extends RoutingAlgorithm {
             return new ArrayList<>();
         } else {
             List<RoutingPath> paths = new ArrayList<>();
-            paths.add(new RoutingPath(findFirstFoundRoute(state, srcNode, dstNode, vl)));
+            paths.add(new RoutingPath(findFirstFoundRoute(state, srcNode, dstNode, vl, timeout)));
             return paths;
         }
     }
 
-    private List<NetworkLink> findFirstFoundRoute(SearchState state, String srcNode, String dstNode, VirtualLink vl) {
+    private List<NetworkLink> findFirstFoundRoute(SearchState state, String srcNode, String dstNode, VirtualLink vl, long timeout) {
         List<NetworkNode> list = new ArrayList<>();
         Set<String> bag = new HashSet<>();
         Map<String, NetworkNode> map = new HashMap<>();
@@ -42,11 +42,13 @@ public class HopCountRoutingAlgorithm extends RoutingAlgorithm {
         int expansionIndex = 0;
         List<Integer> returnIndexes = new ArrayList<>();
         returnIndexes.add(-1);
-        while (expansionIndex < list.size()) {
+        long beginTime = System.currentTimeMillis();
+        while (expansionIndex < list.size() && (System.currentTimeMillis() - beginTime) < timeout) {
             String label = list.get(expansionIndex).getLabel();
             for (NetworkLink link : state.getNetworkGraph().getLinks()) {
                 if (link.getRemainingResourceValue(ResourceType.Bandwidth) >= vl.getRequiredResourceValue(ResourceType.Bandwidth)
-                        && link.getSrcNode().equals(label) && !link.isLoop()) {
+                        && link.getSrcNode().equals(label) && !link.isLoop()
+                ) {
                     NetworkNode child = map.get(link.getDstNode());
                     if (!bag.contains(child.getLabel())) {
                         list.add(child);
