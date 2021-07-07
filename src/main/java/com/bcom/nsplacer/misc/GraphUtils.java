@@ -3,6 +3,7 @@ package com.bcom.nsplacer.misc;
 import com.bcom.nsplacer.placement.NetworkGraph;
 import com.bcom.nsplacer.placement.NetworkLink;
 import com.bcom.nsplacer.placement.NetworkNode;
+import com.bcom.nsplacer.placement.enums.ResourceType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,4 +41,30 @@ public class GraphUtils {
         }
         return btness;
     }
+
+    public static Integer maximumRemainingBandwidth(List<NetworkLink> links) {
+        int d = 0;
+        for (NetworkLink link : links) {
+            d = Math.max(d, link.getRemainingResourceValue(ResourceType.Bandwidth));
+        }
+        return d;
+    }
+
+    public static Integer minimumRemainingBandwidth(List<NetworkLink> links) {
+        int d = Integer.MAX_VALUE;
+        for (NetworkLink link : links) {
+            d = Math.min(d, link.getRemainingResourceValue(ResourceType.Bandwidth));
+        }
+        return d;
+    }
+
+    public static Double averageRemainingBandwidth(List<NetworkLink> links) {
+        double d = 0.0;
+        for (NetworkLink link : links) {
+            d += link.getRemainingResourceValue(ResourceType.Bandwidth);
+        }
+        d /= links.size();
+        return d;
+    }
+
 }
