@@ -48,6 +48,28 @@ body {
     padding-left: 3%;
 }
 
+/**
+BCom Buttons colors
+ */
+.BCButtonBlue {
+    background-color: #00BEE6;
+}
+.BCButtonBlue:hover {
+    background-color: #00ABCF;
+}
+.BCButtonBlue:focus {
+    background-color: #00ABCF;
+}
+.BCLinkBlue {
+    color: #00BEE6;
+}
+.BCLinkBlue:hover {
+    color: #00ABCF;
+}
+.BCLinkBlue:focus {
+    color: #00ABCF;
+}
+
 .FileEntryName {
     text-align: left;
     flex: auto;
