@@ -43,6 +43,7 @@ public class HttpInterceptor implements HandlerInterceptor {
             }
         }
         publicPaths.add("/signIn.html");
+        publicPaths.add("/index.html");
         publicPaths.add("/cmd.html");
         publicPaths.add("/api/user/signIn");
         publicPaths.add("/api/message/*");
@@ -62,7 +63,7 @@ public class HttpInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String uri = request.getRequestURI();
         if ("/".equals(uri)) {
-            response.sendRedirect("/signIn.html");
+            response.sendRedirect("/index.html");
             return false;
         }
 

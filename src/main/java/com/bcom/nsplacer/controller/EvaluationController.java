@@ -1,5 +1,7 @@
 package com.bcom.nsplacer.controller;
 
+import com.bcom.nsplacer.astar.AStarRoutingAlgorithm;
+import com.bcom.nsplacer.astar.DijkstraRoutingAlgorithm;
 import com.bcom.nsplacer.misc.MathUtils;
 import com.bcom.nsplacer.misc.StreamUtils;
 import com.bcom.nsplacer.model.FileEntry;
@@ -124,28 +126,28 @@ public class EvaluationController {
                         sessionParams.getResults().incrementCounter();
                         times.add(sessionParams.placer.getExecutionTime());
                     } else {
-                        sessionParams.placementDetails = sb.toString();
-                        String precision = "%.2f";
-                        double percentRemaining = ((double) sessionParams.placer.getNetworkGraph().getTotalRemainingResourceValue(false, ResourceType.Bandwidth) /
-                                sessionParams.placer.getNetworkGraph().getTotalMaximumResourceValue(false, ResourceType.Bandwidth) * 100.0);
-                        double usedResourcePerServicePercent = (100.0 - percentRemaining) / sessionParams.getResults().getCounter();
-                        List<Long> quartiles = MathUtils.quartile(times);
-                        if (quartiles.isEmpty()) {
-                            for (int i = 0; i < 5; i++) {
-                                quartiles.add(0l);
-                            }
-                        }
-                        sessionParams.getResults().setQ0Time(quartiles.get(0).intValue());
-                        sessionParams.getResults().setQ1Time(quartiles.get(1).intValue());
-                        sessionParams.getResults().setQ2Time(quartiles.get(2).intValue());
-                        sessionParams.getResults().setQ3Time(quartiles.get(3).intValue());
-                        sessionParams.getResults().setQ4Time(quartiles.get(4).intValue());
-                        sessionParams.getResults().setAvgTime((int) MathUtils.genericAverage(times));
-                        sessionParams.getResults().setBwRemaining(String.format(precision, percentRemaining));
-                        sessionParams.getResults().setBwUsedPerService(String.format(precision, usedResourcePerServicePercent));
                         break;
                     }
                 }
+                sessionParams.placementDetails = sb.toString();
+                String precision = "%.2f";
+                double percentRemaining = ((double) sessionParams.placer.getNetworkGraph().getTotalRemainingResourceValue(false, ResourceType.Bandwidth) /
+                        sessionParams.placer.getNetworkGraph().getTotalMaximumResourceValue(false, ResourceType.Bandwidth) * 100.0);
+                double usedResourcePerServicePercent = (100.0 - percentRemaining) / sessionParams.getResults().getCounter();
+                List<Long> quartiles = MathUtils.quartile(times);
+                if (quartiles.isEmpty()) {
+                    for (int i = 0; i < 5; i++) {
+                        quartiles.add(0l);
+                    }
+                }
+                sessionParams.getResults().setQ0Time(quartiles.get(0).intValue());
+                sessionParams.getResults().setQ1Time(quartiles.get(1).intValue());
+                sessionParams.getResults().setQ2Time(quartiles.get(2).intValue());
+                sessionParams.getResults().setQ3Time(quartiles.get(3).intValue());
+                sessionParams.getResults().setQ4Time(quartiles.get(4).intValue());
+                sessionParams.getResults().setAvgTime((int) MathUtils.genericAverage(times));
+                sessionParams.getResults().setBwRemaining(String.format(precision, percentRemaining));
+                sessionParams.getResults().setBwUsedPerService(String.format(precision, usedResourcePerServicePercent));
             } finally {
                 sessionParams.getResults().setRunning(false);
             }

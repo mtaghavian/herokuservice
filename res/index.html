@@ -54,6 +54,7 @@
     }
 
     function loadPage(addr) {
+        console.log("loading "+addr);
         $("#ChangePageSpinner").show();
         if(page !== null) {
             $(page).fadeOut(fadeDelay, function() {

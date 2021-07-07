@@ -45,6 +45,6 @@ function load(addr) {
     if(window.parent.loadPage) {
         window.parent.loadPage(addr);
     } else {
-        window.location.href = addr;
+        window.location.href = "/index.html";
     }
 }
