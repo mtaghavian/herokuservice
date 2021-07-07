@@ -98,7 +98,7 @@ public class HttpInterceptor implements HandlerInterceptor {
             response.setHeader("Access-Control-Allow-Headers", "*");
             response.setHeader("Access-Control-Allow-Credentials", "" + true);
             response.setHeader("Access-Control-Max-Age", "" + 180);
-            response.setHeader("Cache-Control", "max-age=86400;");
+            response.setHeader("Cache-Control", "max-age=3600;");
             if (!uri.contains("/../")) {
                 File file = new File("./res" + uri);
                 if (file.exists()) {
