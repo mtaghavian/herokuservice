@@ -48,28 +48,6 @@ body {
     padding-left: 3%;
 }
 
-/**
-BCom Buttons colors
- */
-.BCButtonBlue {
-    background-color: #00BEE6;
-}
-.BCButtonBlue:hover {
-    background-color: #00ABCF;
-}
-.BCButtonBlue:focus {
-    background-color: #00ABCF;
-}
-.BCLinkBlue {
-    color: #00BEE6;
-}
-.BCLinkBlue:hover {
-    color: #00ABCF;
-}
-.BCLinkBlue:focus {
-    color: #00ABCF;
-}
-
 .FileEntryName {
     text-align: left;
     flex: auto;
@@ -83,7 +61,6 @@ BCom Buttons colors
 .FileEntrySize {
     text-align: center;
     flex: 0 1 auto;
-    color: lightgray;
     padding-left: 5px;
 }
 
@@ -119,7 +96,7 @@ CenteredItems {
     }
 }
 
-/*
+/**
 BCOM Colors and BCOM Bachground Colors
  */
 .BCCBlue {
@@ -163,4 +140,30 @@ BCOM Colors and BCOM Bachground Colors
 }
 .BCBCPurple {
     background-color: #AA64FF;
+}
+
+/**
+BCom Buttons colors
+ */
+.BCButtonBlue {
+    background-color: #00BEE6;
+}
+.BCButtonBlue:hover {
+    opacity: 0.75;
+    background-color: #00BEE6;
+}
+.BCButtonBlue:focus {
+    opacity: 0.75;
+    background-color: #00BEE6;
+}
+.BCLinkBlue {
+    color: #00BEE6;
+}
+.BCLinkBlue:hover {
+    opacity: 0.75;
+    color: #00BEE6;
+}
+.BCLinkBlue:focus {
+    opacity: 0.75;
+    color: #00BEE6;
 }

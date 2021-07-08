@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class IDSRoutingAlgorithm extends RoutingAlgorithm {
 
-    public static int FLOOR = 10;
+    public static int FLOOR = 0;
     private HashSet<String> pathSet;
     private FWRouting fwRouting;
     private List<RoutingPath> foundPaths;

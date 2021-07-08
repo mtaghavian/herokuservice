@@ -157,11 +157,13 @@
                     fileLink.href = "/api/file/download/"+data[key].id;
                     fileLink.classList.add("HeaderHeight");
                     fileLink.classList.add("FileEntryName");
+                    fileLink.classList.add("BCLinkBlue");
                     div.append(fileLink);
 
                     var fileSize = document.createElement('span');
                     fileSize.classList.add("HeaderHeight");
                     fileSize.classList.add("FileEntrySize");
+                    fileSize.classList.add("BCCLightGray");
                     fileSize.appendChild(document.createTextNode("" + humanFileSize(data[key].length)));
                     div.append(fileSize);
 

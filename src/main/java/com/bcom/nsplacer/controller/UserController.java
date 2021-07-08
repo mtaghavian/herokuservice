@@ -6,15 +6,11 @@ import com.bcom.nsplacer.misc.StreamUtils;
 import com.bcom.nsplacer.model.Session;
 import com.bcom.nsplacer.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/user")
@@ -35,7 +31,7 @@ public class UserController {
             session.setUser(dbUser);
             return "YES" + "\n"
                     + StreamUtils.encrypt(dbUser.getUsername() + "\n" + dbUser.getPassword(), StreamUtils.samplePassword) + "\n"
-                    + "/index.html";
+                    + "/evaluations.html";
         } else {
             return "NO\nIncorrect username and/or password";
         }
@@ -62,5 +58,13 @@ public class UserController {
         } else {
             return "NO\n" + "This username is already taken! Please choose another one!";
         }
+    }
+
+    @GetMapping("/signOut")
+    public String signOut(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        HttpSession httpSession = request.getSession();
+        Session session = sessionDao.findById(httpSession.getId());
+        session.signOut();
+        return "YES";
     }
 }

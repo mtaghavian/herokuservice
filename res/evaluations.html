@@ -147,7 +147,13 @@
 
     $("#SignOut").click(function () {
         document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        load('/api/user/signOut');
+        $.ajax({
+            url: "/api/user/signOut",
+            type: "GET",
+            success: function (data, status) {
+                load("/signIn.html");
+            }
+        });
     });
 
     $.ajaxSetup({
