@@ -1,7 +1,6 @@
 package com.bcom.nsplacer.controller;
 
-import com.bcom.nsplacer.astar.AStarRoutingAlgorithm;
-import com.bcom.nsplacer.astar.DijkstraRoutingAlgorithm;
+import com.bcom.nsplacer.misc.InitializerParameters;
 import com.bcom.nsplacer.misc.MathUtils;
 import com.bcom.nsplacer.misc.StreamUtils;
 import com.bcom.nsplacer.model.FileEntry;
@@ -12,8 +11,8 @@ import com.bcom.nsplacer.placement.Placer;
 import com.bcom.nsplacer.placement.ServiceGraph;
 import com.bcom.nsplacer.placement.ZooTopologyImportExportManager;
 import com.bcom.nsplacer.placement.enums.*;
-import com.bcom.nsplacer.placement.routing.HopCountRoutingAlgorithm;
-import com.bcom.nsplacer.placement.routing.IDSRoutingAlgorithm;
+import com.bcom.nsplacer.placement.routing.DijkstraRoutingAlgorithm;
+import com.bcom.nsplacer.placement.routing.UCSRoutingAlgorithm;
 import com.bcom.nsplacer.service.FileEntryService;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,10 +31,14 @@ import java.util.Map;
 @RequestMapping("/api/eval")
 public class EvaluationController {
 
-    public static int maxCpuDemand = 1;
-    public static int maxStorageDemand = 1;
-    public static int maxBandwidthAvailable = 10;
-    public static int nodeCpuAndStorageMaxResources = 1000000;
+    public static InitializerParameters requiredCpu = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredStorage = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredBandwidth = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredLatency = new InitializerParameters(null, 0, 0, 100);
+    public static InitializerParameters availableCpu = new InitializerParameters(null, 0, 0, 1000000);
+    public static InitializerParameters availableStorage = new InitializerParameters(null, 0, 0, 1000000);
+    public static InitializerParameters availableBandwidth = new InitializerParameters(null, 0, 0, 10);
+    public static InitializerParameters availableLatency = new InitializerParameters(null, 0, 0, 1);
 
     @Autowired
     private FileEntryService fileEntryService;
@@ -56,10 +59,9 @@ public class EvaluationController {
         sessionParams.getResults().setCounter(0);
         String networkTopology = params.getNetworkTopology();
         List<FileEntry> fileEntry = fileEntryService.findByName(networkTopology);
-        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(null, StreamUtils.readString(fileEntryService.getInputStream(fileEntry.get(0).getId())),
-                nodeCpuAndStorageMaxResources, nodeCpuAndStorageMaxResources, maxBandwidthAvailable, false, 100, 1);
+        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(StreamUtils.readString(fileEntryService.getInputStream(fileEntry.get(0).getId())), availableCpu, availableStorage, availableBandwidth, availableLatency);
         sessionParams.placer = new Placer(networkGraph, null, true, false, false, PlacerType.FirstFound, ObjectiveType.Bandwidth,
-                params.getRouting().equals(RoutingType.HopCount) ? new HopCountRoutingAlgorithm() : new IDSRoutingAlgorithm(networkGraph),
+                params.getRouting().equals(RoutingType.UCS) ? new UCSRoutingAlgorithm(networkGraph) : new DijkstraRoutingAlgorithm(networkGraph),
                 params.getStrategy(), params.getTimeout(), null);
         new Thread(new Evaluator(sessionParams)).start();
         return "ok";
@@ -79,8 +81,8 @@ public class EvaluationController {
     @GetMapping("/stop")
     public String stop(HttpServletRequest request, HttpServletResponse response) throws IOException {
         final SessionParams sessionParams = getSessionParams(request);
-        sessionParams.getResults().setRunning(false);
         try {
+            sessionParams.getResults().setStop(true);
             sessionParams.placer.stop();
         } catch (Exception ex) {
         }
@@ -108,13 +110,14 @@ public class EvaluationController {
         public void run() {
             try {
                 TopologyType topologyType = sessionParams.params.getServiceTopology();
-                int maxBandwidthDemand = sessionParams.params.getBandwidth();
+                int bandwidthDemand = sessionParams.params.getBandwidth();
                 sessionParams.getResults().setRunning(true);
+                sessionParams.getResults().setStop(false);
                 List<Long> times = new ArrayList<>();
                 ServiceGraph serviceGraph = new ServiceGraph();
                 StringBuilder sb = new StringBuilder();
-                while (sessionParams.getResults().isRunning()) {
-                    serviceGraph.create(null, topologyType, sessionParams.params.getServiceSize(), maxCpuDemand, maxStorageDemand, maxBandwidthDemand, 1000);
+                while (!sessionParams.getResults().isStop()) {
+                    serviceGraph.create(topologyType, sessionParams.params.getServiceSize(), requiredCpu, requiredStorage, new InitializerParameters(null, 0, 0, bandwidthDemand), requiredLatency);
                     sessionParams.placer.setServiceGraph(serviceGraph);
                     sessionParams.placer.run();
                     if (sessionParams.placer.hasFoundPlacement()) {

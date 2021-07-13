@@ -60,11 +60,4 @@ public class UserController {
         }
     }
 
-    @GetMapping("/signOut")
-    public String signOut(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        HttpSession httpSession = request.getSession();
-        Session session = sessionDao.findById(httpSession.getId());
-        session.signOut();
-        return "YES";
-    }
 }

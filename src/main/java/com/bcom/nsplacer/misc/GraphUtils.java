@@ -3,6 +3,7 @@ package com.bcom.nsplacer.misc;
 import com.bcom.nsplacer.placement.NetworkGraph;
 import com.bcom.nsplacer.placement.NetworkLink;
 import com.bcom.nsplacer.placement.NetworkNode;
+import com.bcom.nsplacer.placement.ServiceLink;
 import com.bcom.nsplacer.placement.enums.ResourceType;
 
 import java.util.HashMap;
@@ -25,14 +26,17 @@ public class GraphUtils {
                 linkMap.put(link.getSrcNode(), map);
             }
         }
-        FWRouting fWarshallAlgorithm = new FWRouting();
-        fWarshallAlgorithm.build(graph);
+        FWAlgorithm fWarshallAlgorithm = new FWAlgorithm();
+        fWarshallAlgorithm.initialize(graph);
+        ServiceLink vl = new ServiceLink();
+        vl.setRequiredResourceValue(ResourceType.Bandwidth, 0);
+        fWarshallAlgorithm.update(graph, vl);
         for (NetworkNode n1 : graph.getNodes()) {
             for (NetworkNode n2 : graph.getNodes()) {
                 if (n1.getLabel().equals(n2.getLabel())) {
                     continue;
                 }
-                List<String> path = fWarshallAlgorithm.getPath(n1.getLabel(), n2.getLabel());
+                List<String> path = fWarshallAlgorithm.getPathNodes(n1.getLabel(), n2.getLabel());
                 for (int i = 0; i < path.size() - 1; i++) {
                     String linkLabel = linkMap.get(path.get(i)).get(path.get(i + 1));
                     btness.put(linkLabel, btness.get(linkLabel) + 1);
@@ -45,7 +49,7 @@ public class GraphUtils {
     public static Integer maximumRemainingBandwidth(List<NetworkLink> links) {
         int d = 0;
         for (NetworkLink link : links) {
-            d = Math.max(d, link.getRemainingResourceValue(ResourceType.Bandwidth));
+            d = Math.max(d, link.getCurrentResourceValue(ResourceType.Bandwidth));
         }
         return d;
     }
@@ -53,7 +57,7 @@ public class GraphUtils {
     public static Integer minimumRemainingBandwidth(List<NetworkLink> links) {
         int d = Integer.MAX_VALUE;
         for (NetworkLink link : links) {
-            d = Math.min(d, link.getRemainingResourceValue(ResourceType.Bandwidth));
+            d = Math.min(d, link.getCurrentResourceValue(ResourceType.Bandwidth));
         }
         return d;
     }
@@ -61,7 +65,7 @@ public class GraphUtils {
     public static Double averageRemainingBandwidth(List<NetworkLink> links) {
         double d = 0.0;
         for (NetworkLink link : links) {
-            d += link.getRemainingResourceValue(ResourceType.Bandwidth);
+            d += link.getCurrentResourceValue(ResourceType.Bandwidth);
         }
         d /= links.size();
         return d;

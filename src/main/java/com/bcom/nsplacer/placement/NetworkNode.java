@@ -17,20 +17,20 @@ public class NetworkNode implements Comparable<NetworkNode> {
 
     private String label;
 
-    private List<Resource> remainingResources, maximumResources;
+    private List<Resource> currentResources, maximumResources;
 
     public NetworkNode() {
         maximumResources = new LinkedList<>();
         maximumResources.add(new Resource(ResourceType.Cpu, 1000));
         maximumResources.add(new Resource(ResourceType.Storage, 1000));
-        remainingResources = new LinkedList<>();
-        remainingResources.add(new Resource(ResourceType.Cpu, getMaximumResourceValue(ResourceType.Cpu)));
-        remainingResources.add(new Resource(ResourceType.Storage, getMaximumResourceValue(ResourceType.Storage)));
+        currentResources = new LinkedList<>();
+        currentResources.add(new Resource(ResourceType.Cpu, getMaximumResourceValue(ResourceType.Cpu)));
+        currentResources.add(new Resource(ResourceType.Storage, getMaximumResourceValue(ResourceType.Storage)));
         label = "unknown";
     }
 
-    public int getRemainingResourceValue(ResourceType type) {
-        for (Resource r : remainingResources) {
+    public int getCurrentResourceValue(ResourceType type) {
+        for (Resource r : currentResources) {
             if (type.equals(r.getType())) {
                 return r.getValue();
             }
@@ -38,8 +38,8 @@ public class NetworkNode implements Comparable<NetworkNode> {
         throw new RuntimeException("Resource of type = " + type + " not found!");
     }
 
-    public void setRemainingResourceValue(ResourceType type, int v) {
-        for (Resource r : remainingResources) {
+    public void setCurrentResourceValue(ResourceType type, int v) {
+        for (Resource r : currentResources) {
             if (type.equals(r.getType())) {
                 r.setValue(v);
                 return;
@@ -70,16 +70,16 @@ public class NetworkNode implements Comparable<NetworkNode> {
     public NetworkNode clone() {
         NetworkNode n = new NetworkNode();
         n.setLabel(getLabel());
-        for (Resource r : remainingResources) {
-            n.setRemainingResourceValue(r.getType(), getRemainingResourceValue(r.getType()));
+        for (Resource r : currentResources) {
+            n.setCurrentResourceValue(r.getType(), getCurrentResourceValue(r.getType()));
             n.setMaximumResourceValue(r.getType(), getMaximumResourceValue(r.getType()));
         }
         return n;
     }
 
     public boolean checkFeasibility() {
-        for (Resource r : remainingResources) {
-            if (getRemainingResourceValue(r.getType()) < 0) {
+        for (Resource r : currentResources) {
+            if (getCurrentResourceValue(r.getType()) < 0) {
                 return false;
             }
         }
@@ -87,14 +87,14 @@ public class NetworkNode implements Comparable<NetworkNode> {
     }
 
     public void setRandomValues(Random random) {
-        for (Resource r : remainingResources) {
-            setRemainingResourceValue(r.getType(), Math.abs(random.nextInt()) % getMaximumResourceValue(r.getType()));
+        for (Resource r : currentResources) {
+            setCurrentResourceValue(r.getType(), Math.abs(random.nextInt()) % getMaximumResourceValue(r.getType()));
         }
     }
 
-    public boolean canAccommodate(VNF f) {
-        for (Resource r : remainingResources) {
-            if (getRemainingResourceValue(r.getType()) < f.getRequiredResourceValue(r.getType())) {
+    public boolean canAccommodate(ServiceNode f) {
+        for (Resource r : currentResources) {
+            if (getCurrentResourceValue(r.getType()) < f.getRequiredResourceValue(r.getType())) {
                 return false;
             }
         }

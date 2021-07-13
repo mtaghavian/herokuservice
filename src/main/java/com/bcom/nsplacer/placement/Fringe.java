@@ -6,7 +6,6 @@ public class Fringe {
 
     private List<SearchState> list = new ArrayList<>();
     private boolean isQueue;
-    private int index = 0;
     private boolean shuffle;
 
     public Fringe(boolean isQueue, boolean shuffle) {
@@ -20,17 +19,16 @@ public class Fringe {
         }
         if (isQueue) {
             if (shuffle) {
-                Collections.shuffle(list.subList(index, list.size()));
+                Collections.shuffle(list);
             }
-            Collections.sort(list.subList(index, list.size()));
+            Collections.sort(list);
         }
-
         //printLogs();
     }
 
     public void printLogs() {
         Map<Integer, Integer> depthCounter = new HashMap<>();
-        for (int i = index; i < list.size(); i++) {
+        for (int i = 0; i < list.size(); i++) {
             int d = list.get(i).getDepth();
             if (!depthCounter.containsKey(d)) {
                 depthCounter.put(d, 0);
@@ -42,43 +40,18 @@ public class Fringe {
     }
 
     public boolean isEmpty() {
-        if (isQueue) {
-            return index == list.size();
-        } else {
-            return list.isEmpty();
-        }
+        return list.isEmpty();
     }
 
     public int size() {
-        if (isQueue) {
-            return list.size() - index;
-        } else {
-            return list.size();
-        }
+        return list.size();
     }
 
     public SearchState take() {
         if (isEmpty()) {
             return null;
         }
-        if (isQueue) {
-            SearchState state = list.get(index);
-            index++;
-
-            int maxSize = 5000;
-            while (index > maxSize) {
-                for (int i = maxSize; i < list.size(); i++) {
-                    list.set(i - maxSize, list.get(i));
-                }
-                for (int i = 0; i < maxSize; i++) {
-                    list.remove(list.size() - 1);
-                }
-                index -= maxSize;
-            }
-            return state;
-        } else {
-            return list.remove(list.size() - 1);
-        }
+        return list.remove(list.size() - 1);
     }
 
 }

@@ -78,7 +78,9 @@ public class HttpInterceptor implements HandlerInterceptor {
         session.setLastModified(System.currentTimeMillis());
         if ("/api/user/signOut".equals(uri)) {
             session.signOut();
-            response.sendRedirect("/signIn.html");
+            response.setContentType("text/html");
+            response.getOutputStream().write("<html><body><code> You signed out successfully <br/> <a href=\"index.html\">Return to the main page</a></code></body></html>".getBytes());
+            response.setStatus(HttpServletResponse.SC_OK);
             return false;
         }
         if (session.isSignedIn()) {
@@ -114,7 +116,7 @@ public class HttpInterceptor implements HandlerInterceptor {
                 }
             }
             response.setContentType("text/html");
-            response.getOutputStream().write("<html><body><code> Page not found <br/> <a href=\"signIn.html\">Return to the main page</a></code></body></html>".getBytes());
+            response.getOutputStream().write("<html><body><code> Page not found <br/> <a href=\"index.html\">Return to the main page</a></code></body></html>".getBytes());
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return false;
         } else {

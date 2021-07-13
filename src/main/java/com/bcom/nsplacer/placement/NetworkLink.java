@@ -31,7 +31,7 @@ public class NetworkLink implements Comparable<NetworkLink> {
         label = "unknown";
     }
 
-    public int getRemainingResourceValue(ResourceType type) {
+    public int getCurrentResourceValue(ResourceType type) {
         for (Resource r : remainingResources) {
             if (type.equals(r.getType())) {
                 return r.getValue();
@@ -40,7 +40,7 @@ public class NetworkLink implements Comparable<NetworkLink> {
         throw new RuntimeException("Resource of type = " + type + " not found!");
     }
 
-    public void setRemainingResourceValue(ResourceType type, int v) {
+    public void setCurrentResourceValue(ResourceType type, int v) {
         for (Resource r : remainingResources) {
             if (type.equals(r.getType())) {
                 r.setValue(v);
@@ -75,7 +75,7 @@ public class NetworkLink implements Comparable<NetworkLink> {
         l.setSrcNode(getSrcNode());
         l.setDstNode(getDstNode());
         for (Resource r : remainingResources) {
-            l.setRemainingResourceValue(r.getType(), getRemainingResourceValue(r.getType()));
+            l.setCurrentResourceValue(r.getType(), getCurrentResourceValue(r.getType()));
             l.setMaximumResourceValue(r.getType(), getMaximumResourceValue(r.getType()));
         }
         return l;
@@ -83,7 +83,7 @@ public class NetworkLink implements Comparable<NetworkLink> {
 
     public void setRandomValues(Random random) {
         for (Resource r : remainingResources) {
-            setRemainingResourceValue(r.getType(), Math.abs(random.nextInt()) % getMaximumResourceValue(r.getType()));
+            setCurrentResourceValue(r.getType(), Math.abs(random.nextInt()) % getMaximumResourceValue(r.getType()));
         }
     }
 

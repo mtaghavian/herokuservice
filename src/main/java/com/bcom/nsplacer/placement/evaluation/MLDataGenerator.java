@@ -1,6 +1,7 @@
 package com.bcom.nsplacer.placement.evaluation;
 
 import com.bcom.nsplacer.misc.FileUtils;
+import com.bcom.nsplacer.misc.InitializerParameters;
 import com.bcom.nsplacer.misc.SimpleCounter;
 import com.bcom.nsplacer.misc.StreamUtils;
 import com.bcom.nsplacer.placement.*;
@@ -8,7 +9,7 @@ import com.bcom.nsplacer.placement.enums.ObjectiveType;
 import com.bcom.nsplacer.placement.enums.PlacerType;
 import com.bcom.nsplacer.placement.enums.ResourceType;
 import com.bcom.nsplacer.placement.enums.SearchStrategy;
-import com.bcom.nsplacer.placement.routing.HopCountRoutingAlgorithm;
+import com.bcom.nsplacer.placement.routing.UCSRoutingAlgorithm;
 
 import java.io.*;
 import java.util.*;
@@ -18,9 +19,18 @@ import java.util.concurrent.TimeUnit;
 
 public class MLDataGenerator {
 
+    public static InitializerParameters requiredCpu = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredStorage = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredBandwidth = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredLatency = new InitializerParameters(null, 0, 0, 100);
+    public static InitializerParameters availableCpu = new InitializerParameters(null, 0, 0, 1000000);
+    public static InitializerParameters availableStorage = new InitializerParameters(null, 0, 0, 1000000);
+    public static InitializerParameters availableBandwidth = new InitializerParameters(null, 0, 0, 10);
+    public static InitializerParameters availableLatency = new InitializerParameters(null, 0, 0, 1);
+
     public static double performMonteCarlo(Random random, NetworkGraph networkGraph, int serviceSize,
                                            int experimentCount, int maxCpuDemand, int maxStorageDemand,
-                                           int maxBandwidthDemand, int placementTimeout, boolean considerLinks) throws Exception {
+                                           int maxBandwidthDemand, int maxLatencyDemand, int placementTimeout, boolean considerLinks) throws Exception {
         SimpleCounter counter = new SimpleCounter();
         boolean createLogFile = false;
         FileOutputStream fos = createLogFile ? new FileOutputStream(
@@ -30,13 +40,13 @@ public class MLDataGenerator {
         ServiceGraph serviceGraph = new ServiceGraph();
         serviceGraph.setDataFlowSrcVNF("V1");
         for (int i = 0; i < serviceSize; i++) {
-            VNF v = new VNF();
+            ServiceNode v = new ServiceNode();
             v.setLabel("V" + (i + 1));
             serviceGraph.getVnfs().add(v);
 
             if (i != 0) {
                 if (considerLinks) {
-                    VirtualLink l = new VirtualLink();
+                    ServiceLink l = new ServiceLink();
                     l.setLabel("VL" + i);
                     l.setSrcVNF("V" + i);
                     l.setDstVNF("V" + (i + 1));
@@ -50,14 +60,16 @@ public class MLDataGenerator {
         while (true) {
             i++;
             // set random demands for VNFs of the service
-            for (VNF vnf : serviceGraph.getVnfs()) {
-                vnf.setRandomValues(random, maxCpuDemand, maxStorageDemand);
+            for (ServiceNode vnf : serviceGraph.getVnfs()) {
+                vnf.setRequiredResourceValue(ResourceType.Cpu, Math.abs(random.nextInt()) % maxCpuDemand + 1);
+                vnf.setRequiredResourceValue(ResourceType.Storage, Math.abs(random.nextInt()) % maxStorageDemand + 1);
             }
-            for (VirtualLink vl : serviceGraph.getVirtualLinks()) {
-                vl.setRandomValues(random, maxBandwidthDemand, 1000);
+            for (ServiceLink vl : serviceGraph.getVirtualLinks()) {
+                vl.setRequiredResourceValue(ResourceType.Bandwidth, Math.abs(random.nextInt()) % maxBandwidthDemand + 1);
+                vl.setRequiredResourceValue(ResourceType.Latency, Math.abs(random.nextInt()) % maxLatencyDemand + 1);
             }
             Placer placer = new Placer(networkGraph, serviceGraph, true, false, false, PlacerType.FirstFound, ObjectiveType.Bandwidth,
-                    new HopCountRoutingAlgorithm(), SearchStrategy.EIFF, placementTimeout, new PlacerTerminationAction() {
+                    new UCSRoutingAlgorithm(networkGraph), SearchStrategy.EIFF, placementTimeout, new PlacerTerminationAction() {
                 @Override
                 public void perform(Placer placer) {
                     if (placer.hasFoundPlacement()) {
@@ -128,7 +140,7 @@ public class MLDataGenerator {
                                 // The Law of Total Probability
                                 // We assume the probability of arriving services with different sizes are the same
                                 sap += (1.0 / (maxServiceCount - minServiceCount + 1)) * performMonteCarlo(random, localNetworkGraph,
-                                        serviceSize, markovExperimentCount, maxCpuDemand, maxStorageDemand, maxBandwidthDemand, placementTimeout, considerLinks);
+                                        serviceSize, markovExperimentCount, maxCpuDemand, maxStorageDemand, maxBandwidthDemand, 1000, placementTimeout, considerLinks);
                             }
 
                             // Saving a sample of the dataset
@@ -175,9 +187,8 @@ public class MLDataGenerator {
     }
 
     public static void generateData() throws Exception {
-        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(null,
-                StreamUtils.readString(new File("./samples of network graphs/zoo-topologies/BtEurope.graphml.xml")),
-                1000, 1000, 1000, false, 1000, 1);
+        String SNTopology = "./samples of network graphs/zoo-topologies/BtEurope.graphml.xml";
+        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(StreamUtils.readString(new File(SNTopology)), availableCpu, availableStorage, availableBandwidth, availableLatency);
 
         // Parameters
         int maxCpuDemand = 1000;
@@ -272,8 +283,8 @@ public class MLDataGenerator {
         Map<String, Integer> map = networkGraph.mapOfAggregatedRemainingBandwidth();
         Collections.sort(networkGraph.getNodes());
         for (NetworkNode m : networkGraph.getNodes()) {
-            sb.append(";").append(m.getRemainingResourceValue(ResourceType.Cpu));
-            sb.append(";").append(m.getRemainingResourceValue(ResourceType.Storage));
+            sb.append(";").append(m.getCurrentResourceValue(ResourceType.Cpu));
+            sb.append(";").append(m.getCurrentResourceValue(ResourceType.Storage));
             //sb.append(";").append(map.get(m.getLabel()));
         }
         sb.append("\n");

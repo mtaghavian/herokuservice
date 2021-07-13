@@ -5,23 +5,23 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 @Getter
 @Setter
 @ToString
-public class VirtualLink {
+public class ServiceNode {
 
     private String label;
 
-    private String srcVNF, dstVNF;
-
     private List<Resource> requiredResources;
 
-    public VirtualLink() {
+    public ServiceNode() {
         requiredResources = new LinkedList<>();
-        requiredResources.add(new Resource(ResourceType.Bandwidth, 100));
-        requiredResources.add(new Resource(ResourceType.Latency, 100));
+        requiredResources.add(new Resource(ResourceType.Cpu, 100));
+        requiredResources.add(new Resource(ResourceType.Storage, 100));
         label = "unknown";
     }
 
@@ -44,24 +44,11 @@ public class VirtualLink {
         throw new RuntimeException("Resource of type = " + type + " not found!");
     }
 
-    public VirtualLink clone() {
-        VirtualLink l = new VirtualLink();
-        l.setLabel(getLabel());
-        l.setSrcVNF(getSrcVNF());
-        l.setDstVNF(getDstVNF());
-        l.requiredResources = new ArrayList<>();
-        for (Resource r : requiredResources) {
-            l.requiredResources.add(r.clone());
-            //l.setRequiredResourceValue(r.getType(), getRequiredResourceValue(r.getType()));
-        }
-        return l;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        VirtualLink that = (VirtualLink) o;
+        ServiceNode that = (ServiceNode) o;
         return label.equals(that.label);
     }
 
@@ -70,8 +57,12 @@ public class VirtualLink {
         return Objects.hash(label);
     }
 
-    public void setRandomValues(Random random, int maxBandwidthDemand, int maxLatencyDemand) {
-        setRequiredResourceValue(ResourceType.Bandwidth, Math.abs(random.nextInt()) % maxBandwidthDemand + 1);
-        setRequiredResourceValue(ResourceType.Latency, Math.abs(random.nextInt()) % maxLatencyDemand + 1);
+    public ServiceNode clone() {
+        ServiceNode n = new ServiceNode();
+        n.setLabel(getLabel());
+        for (Resource r : requiredResources) {
+            n.setRequiredResourceValue(r.getType(), getRequiredResourceValue(r.getType()));
+        }
+        return n;
     }
 }

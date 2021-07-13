@@ -1,7 +1,6 @@
 package com.bcom.nsplacer.placement;
 
 import com.bcom.nsplacer.misc.CollectionUtils;
-import com.bcom.nsplacer.misc.GraphUtils;
 import com.bcom.nsplacer.placement.enums.ObjectiveType;
 import com.bcom.nsplacer.placement.enums.ResourceType;
 import com.bcom.nsplacer.placement.enums.SearchStrategy;
@@ -29,16 +28,16 @@ public class SearchState implements Comparable<SearchState> {
     private NetworkGraph networkGraph;
     private Double objectiveValue = 0.0;
     private Integer depth;
-    private List<VNF> vnfList;
-    private List<VNF> placedVNFs;
+    private List<ServiceNode> vnfList;
+    private List<ServiceNode> placedVNFs;
     private List<String> placedNodes;
-    private List<VirtualLink> placedVLs;
+    private List<ServiceLink> placedVLs;
     private List<RoutingPath> placedPaths;
     private Placer placer;
     private SearchStrategy strategy;
     private boolean checkOverallLatency;
 
-    public SearchState(NetworkGraph networkGraph, List<VNF> vnfList, int depth, Placer placer, SearchStrategy strategy, boolean checkOverallLatency) {
+    public SearchState(NetworkGraph networkGraph, List<ServiceNode> vnfList, int depth, Placer placer, SearchStrategy strategy, boolean checkOverallLatency) {
         placer.totalCreatedStates++;
         this.placer = placer;
         this.strategy = strategy;
@@ -63,14 +62,14 @@ public class SearchState implements Comparable<SearchState> {
                 for (RoutingPath path : placedPaths) {
                     for (NetworkLink link : path.getLinks()) {
                         //sum += 1;
-                        sum += link.getRemainingResourceValue(ResourceType.Latency);
+                        sum += link.getCurrentResourceValue(ResourceType.Latency);
                     }
                 }
                 objectiveValue = (double) sum;
             }
         } else if (SearchStrategy.ABO.equals(strategy)) {
             int unplacedBandwidth = 0;
-            for (VirtualLink link : placer.getServiceGraph().getVirtualLinks()) {
+            for (ServiceLink link : placer.getServiceGraph().getVirtualLinks()) {
                 if (!placedVLs.contains(link)) {
                     unplacedBandwidth += link.getRequiredResourceValue(ResourceType.Bandwidth);
                 }
@@ -94,9 +93,9 @@ public class SearchState implements Comparable<SearchState> {
                 List<Integer> list = networkGraph.listOfAggregatedRemainingBandwidth();
                 for (int i = 0; i < networkGraph.getNodes().size(); i++) {
                     sb.append((i != 0) ? ";" : "");
-                    sb.append(networkGraph.getNodes().get(i).getRemainingResourceValue(ResourceType.Cpu));
+                    sb.append(networkGraph.getNodes().get(i).getCurrentResourceValue(ResourceType.Cpu));
                     sb.append(";");
-                    sb.append(networkGraph.getNodes().get(i).getRemainingResourceValue(ResourceType.Storage));
+                    sb.append(networkGraph.getNodes().get(i).getCurrentResourceValue(ResourceType.Storage));
                     //sb.append(";").append(map.get(networkGraph.getNodes().get(i).getLabel()));
                 }
                 for (int l : list) {
@@ -128,9 +127,9 @@ public class SearchState implements Comparable<SearchState> {
             }
             Collections.sort(networkGraph.getNodes(), (o1, o2) -> {
                 double sum = 0;
-                for (Resource r : o1.getRemainingResources()) {
-                    sum += ((double) o1.getRemainingResourceValue(r.getType()) / o1.getMaximumResourceValue(r.getType())) -
-                            ((double) o2.getRemainingResourceValue(r.getType()) / o2.getMaximumResourceValue(r.getType()));
+                for (Resource r : o1.getCurrentResources()) {
+                    sum += ((double) o1.getCurrentResourceValue(r.getType()) / o1.getMaximumResourceValue(r.getType())) -
+                            ((double) o2.getCurrentResourceValue(r.getType()) / o2.getMaximumResourceValue(r.getType()));
                 }
                 int c = (int) Math.round(Math.signum(sum));
                 return SearchStrategy.EDFF.equals(strategy) ? c : -c;
@@ -140,7 +139,7 @@ public class SearchState implements Comparable<SearchState> {
         }
 
         List<SearchState> children = new ArrayList<>();
-        VNF placingVNF = vnfList.get(depth);
+        ServiceNode placingVNF = vnfList.get(depth);
 
         for (NetworkNode placingNode : networkGraph.getNodes()) {
             NetworkGraph graph = networkGraph.clone();
@@ -161,8 +160,8 @@ public class SearchState implements Comparable<SearchState> {
             child.setPlacedPaths(new ArrayList<>(placedPaths));
 
             // Perform placement for the VNF
-            for (Resource r : placingNode.getRemainingResources()) {
-                placingNode.setRemainingResourceValue(r.getType(), placingNode.getRemainingResourceValue(r.getType())
+            for (Resource r : placingNode.getCurrentResources()) {
+                placingNode.setCurrentResourceValue(r.getType(), placingNode.getCurrentResourceValue(r.getType())
                         - placingVNF.getRequiredResourceValue(r.getType()));
             }
 
@@ -176,10 +175,10 @@ public class SearchState implements Comparable<SearchState> {
                 placedVNFMap.put(child.getPlacedVNFs().get(i).getLabel(), i);
             }
 
-            List<VirtualLink> vlsNeedToBePlaced = new ArrayList<>();
+            List<ServiceLink> vlsNeedToBePlaced = new ArrayList<>();
             List<List<RoutingPath>> candidatePaths = new ArrayList<>();
             boolean routingFailed = false;
-            for (VirtualLink vl : placer.getServiceGraph().getVirtualLinks()) {
+            for (ServiceLink vl : placer.getServiceGraph().getVirtualLinks()) {
                 if (!placedVLMap.containsKey(vl.getLabel())) {
                     if (placedVNFMap.containsKey(vl.getSrcVNF()) && placedVNFMap.containsKey(vl.getDstVNF())) {
                         vlsNeedToBePlaced.add(vl);
@@ -203,7 +202,7 @@ public class SearchState implements Comparable<SearchState> {
             if (!routingFailed && !vlsNeedToBePlaced.isEmpty()) {
                 Map<String, Integer> remaining = new HashMap<>(), demanding = new HashMap<>();
                 for (NetworkLink link : graph.getLinks()) {
-                    remaining.put(link.getLabel(), link.getRemainingResourceValue(ResourceType.Bandwidth));
+                    remaining.put(link.getLabel(), link.getCurrentResourceValue(ResourceType.Bandwidth));
                 }
                 List<Integer> indices = new ArrayList<>();
                 for (int i = 0; i < candidatePaths.size(); i++) {
@@ -229,8 +228,8 @@ public class SearchState implements Comparable<SearchState> {
                     for (int i = 0; i < candidatePaths.size(); i++) {
                         RoutingPath path = candidatePaths.get(i).get(indices.get(i));
                         for (NetworkLink link : path.getLinks()) {
-                            link.setRemainingResourceValue(ResourceType.Bandwidth,
-                                    link.getRemainingResourceValue(ResourceType.Bandwidth)
+                            link.setCurrentResourceValue(ResourceType.Bandwidth,
+                                    link.getCurrentResourceValue(ResourceType.Bandwidth)
                                             - vlsNeedToBePlaced.get(i).getRequiredResourceValue(ResourceType.Bandwidth));
                         }
                         child.getPlacedVLs().add(vlsNeedToBePlaced.get(i));
@@ -291,7 +290,7 @@ public class SearchState implements Comparable<SearchState> {
         int sum = 0;
         for (RoutingPath path : placedPaths) {
             for (NetworkLink l : path.getLinks()) {
-                sum += l.getRemainingResourceValue(ResourceType.Latency);
+                sum += l.getCurrentResourceValue(ResourceType.Latency);
             }
         }
         return sum;
@@ -301,30 +300,19 @@ public class SearchState implements Comparable<SearchState> {
     public int compareTo(SearchState o) {
         int cmp = objectiveValue.compareTo(o.getObjectiveValue());
         if (SearchStrategy.ABO.equals(strategy)) {
+            cmp = -cmp;
             if (cmp != 0) {
                 return cmp;
             }
-            cmp = -depth.compareTo(o.depth);
+            cmp = depth.compareTo(o.depth);
             if (cmp != 0) {
                 return cmp;
             }
-            cmp = -(GraphUtils.minimumRemainingBandwidth(networkGraph.getLinks()))
-                    .compareTo(GraphUtils.minimumRemainingBandwidth(o.getNetworkGraph().getLinks()));
-            if (cmp != 0) {
-                return cmp;
-            }
-//            cmp = -(GraphUtils.maximumRemainingBandwidth(networkGraph.getLinks()))
-//                    .compareTo(GraphUtils.maximumRemainingBandwidth(o.getNetworkGraph().getLinks()));
+//            cmp = -(GraphUtils.minimumRemainingBandwidth(networkGraph.getLinks()))
+//                    .compareTo(GraphUtils.minimumRemainingBandwidth(o.getNetworkGraph().getLinks()));
 //            if (cmp != 0) {
 //                return cmp;
 //            }
-//            cmp = -(GraphUtils.averageRemainingBandwidth(networkGraph.getLinks()))
-//                    .compareTo(GraphUtils.averageRemainingBandwidth(o.getNetworkGraph().getLinks()));
-//            if (cmp != 0) {
-//                return cmp;
-//            }
-            //System.out.println("hey: " + depth);
-            //return (o.calcPlacedLatency() - calcPlacedLatency()) * 1;
             return 0;
         } else if (SearchStrategy.DBO.equals(strategy)) {
             return -cmp;
@@ -349,13 +337,13 @@ public class SearchState implements Comparable<SearchState> {
         // Check end-to-end latency
         if (checkOverallLatency && isTerminal()) {
             int requiredLatency = 0;
-            for (VirtualLink vl : placer.getServiceGraph().getVirtualLinks()) {
+            for (ServiceLink vl : placer.getServiceGraph().getVirtualLinks()) {
                 requiredLatency += vl.getRequiredResourceValue(ResourceType.Latency);
             }
             int providedLatency = 0;
             for (RoutingPath p : placedPaths) {
                 for (NetworkLink l : p.getLinks()) {
-                    providedLatency += l.getRemainingResourceValue(ResourceType.Latency);
+                    providedLatency += l.getCurrentResourceValue(ResourceType.Latency);
                 }
             }
             if (requiredLatency < providedLatency) {

@@ -2,7 +2,8 @@ package com.bcom.nsplacer.misc;
 
 import com.bcom.nsplacer.placement.NetworkGraph;
 import com.bcom.nsplacer.placement.NetworkLink;
-import lombok.NoArgsConstructor;
+import com.bcom.nsplacer.placement.ServiceLink;
+import com.bcom.nsplacer.placement.enums.ResourceType;
 
 import java.util.*;
 
@@ -11,8 +12,7 @@ import java.util.*;
  *
  * @author <a href="sven@happycoders.eu">Sven Woltmann</a>
  */
-@NoArgsConstructor
-public class FWRouting {
+public class FWAlgorithm {
 
     private int maxCost;
     private int[][] costs;
@@ -20,9 +20,11 @@ public class FWRouting {
     private int num;
     private String[] nodes;
     private Map<String, Integer> nodeNameToIndex;
+    private Map<String, NetworkLink> linkMap;
+    private Map<String, Map<String, String>> linkNodeMap;
     private NetworkGraph graph;
 
-    public int getMaxDist() {
+    public int getMaxCost() {
         return maxCost;
     }
 
@@ -30,13 +32,11 @@ public class FWRouting {
         return graph;
     }
 
-    public void build(NetworkGraph graph) {
+    public void initialize(NetworkGraph graph) {
         this.graph = graph;
-        int n = graph.getNodes().size();
-        String[] nodes = graph.getNodes().stream().map(x -> x.getLabel()).toArray(String[]::new);
-
-        this.num = nodes.length;
-        this.nodes = nodes;
+        String[] nodesLabels = graph.getNodes().stream().map(x -> x.getLabel()).toArray(String[]::new);
+        num = nodesLabels.length;
+        nodes = nodesLabels;
 
         // Create lookup map from node name to node index
         Map<String, Integer> temp = new HashMap<>();
@@ -49,19 +49,41 @@ public class FWRouting {
         this.costs = new int[num][num];
         this.successors = new int[num][num];
 
+        linkMap = new HashMap<>();
+        for (NetworkLink link : graph.getLinks()) {
+            linkMap.put(link.getLabel(), link);
+        }
+        linkNodeMap = new HashMap<>();
+        for (NetworkLink link : graph.getLinks()) {
+            if (!link.isLoop()) {
+                Map<String, String> map = linkNodeMap.get(link.getSrcNode());
+                if (map == null) {
+                    map = new HashMap<>();
+                }
+                map.put(link.getDstNode(), link.getLabel());
+                linkNodeMap.put(link.getSrcNode(), map);
+            }
+        }
+    }
+
+    public void update(NetworkGraph graph, ServiceLink vl) {
         // Preparation
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
+        for (NetworkLink link : graph.getLinks()) {
+            linkMap.put(link.getLabel(), link);
+        }
+        for (int i = 0; i < num; i++) {
+            for (int j = 0; j < num; j++) {
                 if (i == j) {
                     costs[i][j] = 0;
                     successors[i][j] = -1;
                 } else {
                     NetworkLink targetLink = null;
-                    for (NetworkLink link : graph.getLinks()) {
-                        if (link.getSrcNode().equals(nodes[i]) && link.getDstNode().equals(nodes[j])) {
-                            targetLink = link;
-                            break;
+                    try {
+                        NetworkLink networkLink = linkMap.get(linkNodeMap.get(nodes[i]).get(nodes[j]));
+                        if (networkLink.getCurrentResourceValue(ResourceType.Bandwidth) >= vl.getRequiredResourceValue(ResourceType.Bandwidth)) {
+                            targetLink = networkLink;
                         }
+                    } catch (NullPointerException np) {
                     }
                     if (targetLink == null) {
                         costs[i][j] = Integer.MAX_VALUE;
@@ -75,22 +97,22 @@ public class FWRouting {
         }
         // Iterations
         maxCost = 0;
-        for (int k = 0; k < n; k++) {
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
+        for (int k = 0; k < num; k++) {
+            for (int i = 0; i < num; i++) {
+                for (int j = 0; j < num; j++) {
                     int costViaNodeK = addCosts(costs[i][k], costs[k][j]);
                     if (costViaNodeK < costs[i][j]) {
                         costs[i][j] = costViaNodeK;
                         successors[i][j] = successors[i][k];
                     }
-                    if (k == n - 1) {
+                    if (k == num - 1) {
                         maxCost = (costs[i][j] != Integer.MAX_VALUE) ? Math.max(maxCost, costs[i][j]) : maxCost;
                     }
                 }
             }
         }
         // Detect negative cycles
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < num; i++) {
             if (costs[i][i] < 0) {
                 throw new IllegalArgumentException("Graph has a negative cycle");
             }
@@ -108,22 +130,28 @@ public class FWRouting {
         return costs[nodeNameToIndex.get(source)][nodeNameToIndex.get(dest)];
     }
 
-    public List<String> getPath(String source, String dest) {
+    public List<String> getPathNodes(String source, String dest) {
         int i = nodeNameToIndex.get(source);
         int j = nodeNameToIndex.get(dest);
-
         if (successors[i][j] == -1) {
             return new ArrayList<>();
         }
-
         List<String> path = new ArrayList<>();
         path.add(nodes[i]);
-
         while (i != j) {
             i = successors[i][j];
             path.add(nodes[i]);
         }
+        return path;
+    }
 
+    public List<NetworkLink> getPathLinks(String source, String dest) {
+        List<NetworkLink> path = new ArrayList<>();
+        List<String> pathNodes = getPathNodes(source, dest);
+        for (int i = 0; i < pathNodes.size() - 1; i++) {
+            NetworkLink networkLink = linkMap.get(linkNodeMap.get(pathNodes.get(i)).get(pathNodes.get(i + 1)));
+            path.add(networkLink);
+        }
         return path;
     }
 

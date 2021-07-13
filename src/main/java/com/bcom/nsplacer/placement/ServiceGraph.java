@@ -1,5 +1,6 @@
 package com.bcom.nsplacer.placement;
 
+import com.bcom.nsplacer.misc.InitializerParameters;
 import com.bcom.nsplacer.placement.enums.ResourceType;
 import com.bcom.nsplacer.placement.enums.TopologyType;
 import lombok.Getter;
@@ -17,16 +18,16 @@ public class ServiceGraph {
 
     private String dataFlowSrcVNF;
 
-    private List<VNF> vnfs = new ArrayList<>();
+    private List<ServiceNode> vnfs = new ArrayList<>();
 
-    private List<VirtualLink> virtualLinks = new ArrayList<>();
+    private List<ServiceLink> virtualLinks = new ArrayList<>();
 
     private int latency = 0;
 
-    public List<VNF> traverse() {
-        List<VNF> bfsList = new ArrayList<>();
+    public List<ServiceNode> traverse() {
+        List<ServiceNode> bfsList = new ArrayList<>();
         Set<String> bfsBag = new HashSet<>();
-        Map<String, VNF> map = new HashMap<>();
+        Map<String, ServiceNode> map = new HashMap<>();
         for (int i = 0; i < vnfs.size(); i++) {
             map.put(vnfs.get(i).getLabel(), vnfs.get(i));
         }
@@ -35,9 +36,9 @@ public class ServiceGraph {
         int i = 0;
         while (i < bfsList.size()) {
             String label = bfsList.get(i).getLabel();
-            for (VirtualLink l : virtualLinks) {
+            for (ServiceLink l : virtualLinks) {
                 if (l.getSrcVNF().equals(label)) {
-                    VNF child = map.get(l.getDstVNF());
+                    ServiceNode child = map.get(l.getDstVNF());
                     if (!bfsBag.contains(child.getLabel())) {
                         bfsList.add(child);
                         bfsBag.add(child.getLabel());
@@ -63,115 +64,87 @@ public class ServiceGraph {
 
     public String getStatus() {
         int sumCpu = 0, sumStorage = 0, sumBandwidth = 0;
-        for (VNF node : getVnfs()) {
+        for (ServiceNode node : getVnfs()) {
             sumCpu += node.getRequiredResourceValue(ResourceType.Cpu);
             sumStorage += node.getRequiredResourceValue(ResourceType.Storage);
         }
-        for (VirtualLink link : getVirtualLinks()) {
+        for (ServiceLink link : getVirtualLinks()) {
             sumBandwidth += link.getRequiredResourceValue(ResourceType.Bandwidth);
         }
         return "Total remaining resources (cpu, storage, bandwidth) = (" + sumCpu + ", " + sumStorage + ", " + sumBandwidth + ")";
     }
 
-    public void create(Random random, TopologyType topologyType, int serviceSize, int maxCpuDemand, int maxStorageDemand, int maxBandwidthDemand, int maxLatencyDemand) {
+    public void create(TopologyType topologyType, int serviceSize, InitializerParameters cpu, InitializerParameters storage, InitializerParameters bandwidth, InitializerParameters latency) {
         vnfs.clear();
         virtualLinks.clear();
         setDataFlowSrcVNF("V1");
         for (int i = 0; i < serviceSize; i++) {
-            VNF v = new VNF();
+            ServiceNode v = new ServiceNode();
             v.setLabel("V" + (i + 1));
-            if (random != null) {
-                v.setRandomValues(random, maxCpuDemand, maxStorageDemand);
-            } else {
-                v.setRequiredResourceValue(ResourceType.Cpu, maxCpuDemand);
-                v.setRequiredResourceValue(ResourceType.Storage, maxStorageDemand);
-            }
+            v.setRequiredResourceValue(ResourceType.Cpu, cpu.get());
+            v.setRequiredResourceValue(ResourceType.Storage, storage.get());
             getVnfs().add(v);
         }
         if (TopologyType.DaisyChain.equals(topologyType)) {
             int linkIndex = 1;
             for (int i = 1; i < serviceSize; i++) {
-                VirtualLink l = new VirtualLink();
+                ServiceLink l = new ServiceLink();
                 l.setLabel("VL" + linkIndex);
                 l.setSrcVNF("V" + i);
                 l.setDstVNF("V" + (i + 1));
-                if (random != null) {
-                    l.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
-                } else {
-                    l.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
-                    l.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
-                }
+                l.setRequiredResourceValue(ResourceType.Bandwidth, bandwidth.get());
+                l.setRequiredResourceValue(ResourceType.Latency, latency.get());
                 getVirtualLinks().add(l);
                 linkIndex++;
 
-                VirtualLink clone = l.clone();
+                ServiceLink clone = l.clone();
                 clone.setLabel("VL" + linkIndex);
                 clone.setSrcVNF(l.getDstVNF());
                 clone.setDstVNF(l.getSrcVNF());
-                if (random != null) {
-                    clone.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
-                } else {
-                    clone.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
-                    clone.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
-                }
+                clone.setRequiredResourceValue(ResourceType.Bandwidth, bandwidth.get());
+                clone.setRequiredResourceValue(ResourceType.Latency, latency.get());
                 getVirtualLinks().add(clone);
                 linkIndex++;
             }
         } else if (TopologyType.Ring.equals(topologyType)) {
             int linkIndex = 1;
             for (int i = 1; i <= serviceSize; i++) {
-                VirtualLink l = new VirtualLink();
+                ServiceLink l = new ServiceLink();
                 l.setLabel("VL" + linkIndex);
                 l.setSrcVNF("V" + i);
                 l.setDstVNF("V" + ((i == serviceSize) ? 1 : (i + 1)));
-                if (random != null) {
-                    l.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
-                } else {
-                    l.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
-                    l.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
-                }
+                l.setRequiredResourceValue(ResourceType.Bandwidth, bandwidth.get());
+                l.setRequiredResourceValue(ResourceType.Latency, latency.get());
                 getVirtualLinks().add(l);
                 linkIndex++;
 
-                VirtualLink clone = l.clone();
+                ServiceLink clone = l.clone();
                 clone.setLabel("VL" + linkIndex);
                 clone.setSrcVNF(l.getDstVNF());
                 clone.setDstVNF(l.getSrcVNF());
-                if (random != null) {
-                    clone.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
-                } else {
-                    clone.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
-                    clone.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
-                }
+                clone.setRequiredResourceValue(ResourceType.Bandwidth, bandwidth.get());
+                clone.setRequiredResourceValue(ResourceType.Latency, latency.get());
                 getVirtualLinks().add(clone);
                 linkIndex++;
             }
         } else if (TopologyType.Star.equals(topologyType)) {
             int linkIndex = 1;
             for (int i = 1; i < serviceSize; i++) {
-                VirtualLink l = new VirtualLink();
+                ServiceLink l = new ServiceLink();
                 l.setLabel("VL" + linkIndex);
                 l.setSrcVNF("V" + 1);
                 l.setDstVNF("V" + (i + 1));
-                if (random != null) {
-                    l.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
-                } else {
-                    l.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
-                    l.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
-                }
+                l.setRequiredResourceValue(ResourceType.Bandwidth, bandwidth.get());
+                l.setRequiredResourceValue(ResourceType.Latency, latency.get());
                 getVirtualLinks().add(l);
                 linkIndex++;
 
-                VirtualLink clone = l.clone();
+                ServiceLink clone = l.clone();
                 clone.setLabel("VL" + linkIndex);
                 clone.setSrcVNF(l.getDstVNF());
                 clone.setDstVNF(l.getSrcVNF());
-                if (random != null) {
-                    clone.setRandomValues(random, maxBandwidthDemand, maxLatencyDemand);
-                } else {
-                    clone.setRequiredResourceValue(ResourceType.Bandwidth, maxBandwidthDemand);
-                    clone.setRequiredResourceValue(ResourceType.Latency, maxLatencyDemand);
-                }
+                clone.setRequiredResourceValue(ResourceType.Bandwidth, bandwidth.get());
+                clone.setRequiredResourceValue(ResourceType.Latency, latency.get());
                 getVirtualLinks().add(clone);
                 linkIndex++;
             }

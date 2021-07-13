@@ -5,24 +5,23 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 @Getter
 @Setter
 @ToString
-public class VNF {
+public class ServiceLink {
 
     private String label;
 
+    private String srcVNF, dstVNF;
+
     private List<Resource> requiredResources;
 
-    public VNF() {
+    public ServiceLink() {
         requiredResources = new LinkedList<>();
-        requiredResources.add(new Resource(ResourceType.Cpu, 100));
-        requiredResources.add(new Resource(ResourceType.Storage, 100));
+        requiredResources.add(new Resource(ResourceType.Bandwidth, 100));
+        requiredResources.add(new Resource(ResourceType.Latency, 100));
         label = "unknown";
     }
 
@@ -45,11 +44,24 @@ public class VNF {
         throw new RuntimeException("Resource of type = " + type + " not found!");
     }
 
+    public ServiceLink clone() {
+        ServiceLink l = new ServiceLink();
+        l.setLabel(getLabel());
+        l.setSrcVNF(getSrcVNF());
+        l.setDstVNF(getDstVNF());
+        l.requiredResources = new ArrayList<>();
+        for (Resource r : requiredResources) {
+            l.requiredResources.add(r.clone());
+            //l.setRequiredResourceValue(r.getType(), getRequiredResourceValue(r.getType()));
+        }
+        return l;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        VNF that = (VNF) o;
+        ServiceLink that = (ServiceLink) o;
         return label.equals(that.label);
     }
 
@@ -58,17 +70,4 @@ public class VNF {
         return Objects.hash(label);
     }
 
-    public void setRandomValues(Random random, int maxCpuDemand, int maxStorageDemand) {
-        setRequiredResourceValue(ResourceType.Cpu, Math.abs(random.nextInt()) % maxCpuDemand + 1);
-        setRequiredResourceValue(ResourceType.Storage, Math.abs(random.nextInt()) % maxStorageDemand + 1);
-    }
-
-    public VNF clone() {
-        VNF n = new VNF();
-        n.setLabel(getLabel());
-        for (Resource r : requiredResources) {
-            n.setRequiredResourceValue(r.getType(), getRequiredResourceValue(r.getType()));
-        }
-        return n;
-    }
 }

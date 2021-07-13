@@ -10,6 +10,7 @@ import lombok.Setter;
 public class EvaluationResults {
 
     private volatile boolean running;
+    private volatile boolean stop;
     private volatile Integer counter;
     private Integer q0Time, q1Time, q2Time, q3Time, q4Time;
     private Integer avgTime;

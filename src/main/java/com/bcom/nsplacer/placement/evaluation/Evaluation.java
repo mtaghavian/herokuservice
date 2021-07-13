@@ -1,10 +1,11 @@
 package com.bcom.nsplacer.placement.evaluation;
 
+import com.bcom.nsplacer.misc.InitializerParameters;
 import com.bcom.nsplacer.misc.MathUtils;
 import com.bcom.nsplacer.misc.StreamUtils;
 import com.bcom.nsplacer.placement.*;
 import com.bcom.nsplacer.placement.enums.*;
-import com.bcom.nsplacer.placement.routing.IDSRoutingAlgorithm;
+import com.bcom.nsplacer.placement.routing.DijkstraRoutingAlgorithm;
 import com.bcom.nsplacer.placement.routing.RoutingAlgorithm;
 
 import java.io.BufferedReader;
@@ -14,22 +15,24 @@ import java.util.*;
 
 public class Evaluation {
 
-    public static int timeout = 2000;
-    public static int cpuDemand = 1;
-    public static int storageDemand = 1;
-    public static int bandwidthDemand = 1;
-    public static int bandwidthAvailable = 10;
-    public static int cpuAndStorageAvailable = 1000000;
-    public static int latencyRange = 1, latencyOffset = 1, latencyDemand = 100;
+    public static int timeout = 4000;
+    public static InitializerParameters requiredCpu = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredStorage = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredBandwidth = new InitializerParameters(null, 0, 0, 1);
+    public static InitializerParameters requiredLatency = new InitializerParameters(null, 0, 0, 100);
+    public static InitializerParameters availableCpu = new InitializerParameters(null, 0, 0, 1000000);
+    public static InitializerParameters availableStorage = new InitializerParameters(null, 0, 0, 1000000);
+    public static InitializerParameters availableBandwidth = new InitializerParameters(null, 0, 0, 10);
+    public static InitializerParameters availableLatency = new InitializerParameters(null, 0, 0, 1);
 
     public static void singleTest() throws Exception {
         //String SNTopology = "./samples of network graphs/zoo-topologies/BtNorthAmerica.graphml.xml";
         String SNTopology = "./samples of network graphs/zoo-topologies/BtEurope.graphml.xml";
-        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(null, StreamUtils.readString(new File(SNTopology)), cpuAndStorageAvailable, cpuAndStorageAvailable, bandwidthAvailable, false, latencyRange, latencyOffset);
+        NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(StreamUtils.readString(new File(SNTopology)), availableCpu, availableStorage, availableBandwidth, availableLatency);
 
-        RoutingAlgorithm routingAlgorithm = new IDSRoutingAlgorithm(networkGraph);
-        Placer placer = new Placer(networkGraph, null, true, false, false, PlacerType.FirstFound, ObjectiveType.Bandwidth,
-                routingAlgorithm,
+        RoutingAlgorithm routingAlgorithm = new DijkstraRoutingAlgorithm(networkGraph);
+        Placer placer = new Placer(networkGraph, null, true, false, false,
+                PlacerType.FirstFound, ObjectiveType.Bandwidth, routingAlgorithm,
                 SearchStrategy.ABO, timeout, new PlacerTerminationAction() {
             @Override
             public void perform(Placer placer) {
@@ -37,12 +40,11 @@ public class Evaluation {
         });
 
         int cnt = 0;
-        Random random = null;
         ServiceGraph serviceGraph = new ServiceGraph();
         long totalTime = 0, totalLatency = 0;
-        IDSRoutingAlgorithm.FLOOR = 9;
+        //IDSRoutingAlgorithm.FLOOR = 9;
         while (true) {
-            serviceGraph.create(random, TopologyType.DaisyChain, 8, cpuDemand, storageDemand, bandwidthDemand, latencyDemand);
+            serviceGraph.create(TopologyType.DaisyChain, 8, requiredCpu, requiredStorage, requiredBandwidth, requiredLatency);
             placer.setServiceGraph(serviceGraph);
             placer.run();
             if (placer.hasFoundPlacement()) {
@@ -59,11 +61,11 @@ public class Evaluation {
                 cnt++;
                 System.out.println("# of placed services: " + cnt);
             } else {
-                if (IDSRoutingAlgorithm.FLOOR == 0) {
-                    break;
-                } else {
-                    IDSRoutingAlgorithm.FLOOR--;
-                }
+                //if (IDSRoutingAlgorithm.FLOOR == 0) {
+                break;
+                //} else {
+                //    IDSRoutingAlgorithm.FLOOR--;
+                //}
             }
         }
         System.out.println("Total time: " + totalTime);
@@ -79,13 +81,18 @@ public class Evaluation {
             PlacerType placerType = PlacerType.FirstFound;
             System.out.println(SNTopology);
 
-            NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(null, StreamUtils.readString(new File(SNTopology)), cpuAndStorageAvailable, cpuAndStorageAvailable, bandwidthAvailable, false, latencyRange, 1);
-            RoutingAlgorithm routingAlgorithm = new IDSRoutingAlgorithm(networkGraph);
+            NetworkGraph networkGraph = ZooTopologyImportExportManager.importFromXML(StreamUtils.readString(new File(SNTopology)), availableCpu, availableStorage, availableBandwidth, availableLatency);
+            RoutingAlgorithm routingAlgorithm = new DijkstraRoutingAlgorithm(networkGraph);
 
             System.out.println("Demand\tServiceTopology\tMethod\tServiceSize\t#PlacedServices\tQ0\tQ1\tQ2\tQ3\tQ4\tAverage\tFinalRemainedBandwidthPercent\tAverageUsedBandwidthPercent");
-            for (int maxBandwidthDemand = 1; maxBandwidthDemand <= bandwidthAvailable; maxBandwidthDemand++) {
+            for (int bandwidthDemand = 1; bandwidthDemand <= requiredBandwidth.get(); bandwidthDemand++) {
                 for (TopologyType topologyType : Arrays.asList(TopologyType.DaisyChain, TopologyType.Ring, TopologyType.Star)) {
-                    for (SearchStrategy strategy : Arrays.asList(SearchStrategy.VOTE, SearchStrategy.ABO, SearchStrategy.DBO, SearchStrategy.EIFF, SearchStrategy.EDFF)) {
+                    for (SearchStrategy strategy : Arrays.asList(SearchStrategy.VOTE
+                            , SearchStrategy.ABO
+                            , SearchStrategy.DBO
+                            //, SearchStrategy.EIFF
+                            //, SearchStrategy.EDFF
+                    )) {
                         for (int serviceSize = 3; serviceSize <= 8; serviceSize++) {
                             Placer placer = new Placer(networkGraph, null, true, false, false, placerType, ObjectiveType.Bandwidth, routingAlgorithm, strategy, timeout, null);
 
@@ -94,7 +101,7 @@ public class Evaluation {
                             Random random = null;
                             ServiceGraph serviceGraph = new ServiceGraph();
                             while (true) {
-                                serviceGraph.create(random, topologyType, serviceSize, cpuDemand, storageDemand, maxBandwidthDemand, 1000);
+                                serviceGraph.create(topologyType, serviceSize, requiredCpu, requiredStorage, requiredBandwidth, requiredLatency);
                                 placer.setServiceGraph(serviceGraph);
                                 placer.run();
                                 if (placer.hasFoundPlacement()) {
@@ -112,7 +119,7 @@ public class Evaluation {
                                             quartiles.add(0l);
                                         }
                                     }
-                                    System.out.println(maxBandwidthDemand
+                                    System.out.println(bandwidthDemand
                                             + "\t" + topologyType
                                             + "\t" + strategy
                                             + "\t" + serviceSize

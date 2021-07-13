@@ -33,12 +33,12 @@ public class NetworkGraph {
         int sum = 0;
         if (nodeResource) {
             for (NetworkNode node : getNodes()) {
-                sum += node.getRemainingResourceValue(type);
+                sum += node.getCurrentResourceValue(type);
             }
         } else {
             for (NetworkLink link : getLinks()) {
                 if (!link.isLoop()) {
-                    sum += link.getRemainingResourceValue(type);
+                    sum += link.getCurrentResourceValue(type);
                 }
             }
         }
@@ -66,11 +66,11 @@ public class NetworkGraph {
     }
 
     public List<Integer> listRemainingBandwidth() {
-        Collections.sort(getLinks(), Comparator.comparingInt(o -> o.getRemainingResourceValue(ResourceType.Bandwidth)));
+        Collections.sort(getLinks(), Comparator.comparingInt(o -> o.getCurrentResourceValue(ResourceType.Bandwidth)));
         List<Integer> list = new ArrayList<>();
         for (NetworkLink l : getLinks()) {
             if (!l.isLoop()) {
-                list.add(l.getRemainingResourceValue(ResourceType.Bandwidth));
+                list.add(l.getCurrentResourceValue(ResourceType.Bandwidth));
             }
         }
         return list;
@@ -80,7 +80,7 @@ public class NetworkGraph {
         Map<String, Integer> map = new HashMap<>();
         for (NetworkLink l : getLinks()) {
             if (!l.isLoop()) {
-                int rb = l.getRemainingResourceValue(ResourceType.Bandwidth);
+                int rb = l.getCurrentResourceValue(ResourceType.Bandwidth);
                 Integer nb = map.get(l.getSrcNode());
                 map.put(l.getSrcNode(), (nb == null) ? rb : nb + rb);
             }
@@ -101,9 +101,9 @@ public class NetworkGraph {
     public void sortNodes() {
         Collections.sort(getNodes(), (o1, o2) -> {
             double sum = 0;
-            for (Resource r : o1.getRemainingResources()) {
-                sum += ((double) o1.getRemainingResourceValue(r.getType()) / o1.getMaximumResourceValue(r.getType())) -
-                        ((double) o2.getRemainingResourceValue(r.getType()) / o2.getMaximumResourceValue(r.getType()));
+            for (Resource r : o1.getCurrentResources()) {
+                sum += ((double) o1.getCurrentResourceValue(r.getType()) / o1.getMaximumResourceValue(r.getType())) -
+                        ((double) o2.getCurrentResourceValue(r.getType()) / o2.getMaximumResourceValue(r.getType()));
             }
             return (int) Math.round(Math.signum(sum));
         });
@@ -112,12 +112,12 @@ public class NetworkGraph {
     public String getStatus() {
         int sumCpu = 0, sumStorage = 0, sumBandwidth = 0;
         for (NetworkNode node : getNodes()) {
-            sumCpu += node.getRemainingResourceValue(ResourceType.Cpu);
-            sumStorage += node.getRemainingResourceValue(ResourceType.Storage);
+            sumCpu += node.getCurrentResourceValue(ResourceType.Cpu);
+            sumStorage += node.getCurrentResourceValue(ResourceType.Storage);
         }
         for (NetworkLink link : getLinks()) {
             if (!link.isLoop()) {
-                sumBandwidth += link.getRemainingResourceValue(ResourceType.Bandwidth);
+                sumBandwidth += link.getCurrentResourceValue(ResourceType.Bandwidth);
             }
         }
         return "Total remaining resources (cpu, storage, bandwidth) = (" + sumCpu + ", " + sumStorage + ", " + sumBandwidth + ")";
